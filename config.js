@@ -32,7 +32,7 @@ window.RSVP_CONFIG = {
     { who: 'Urban K.', amount: 3.67, note: 'Rabm met še za svoj porsche.' },
     { who: 'Tanya S.', amount: 5, note: '' },
     { who: 'Matej Š.', amount: 0.67, note: 'Mau pa po mau.' },
-    { who: 'Minej', amount: 36.24, note: '' },
+    { who: 'Minej M.', amount: 36.24, note: '' },
     { who: 'Matic S.', amount: 6.70, note: '' },
     { who: 'Filip Č.', amount: 5, note: '' },
     { who: 'Nace K.', amount: 3, note: 'Porshe.' },
