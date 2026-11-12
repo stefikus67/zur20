@@ -724,7 +724,9 @@
     if (calBuilt) return; calBuilt = true;
     var box = $('calBtns'), hint = $('calHint'), esc = $('escape');
     var ics = absUrl(ICS_PATH), g = googleUrl();
-    var apple = a(ics, isAndroid ? 'Drug koledar (.ics)' : 'Apple koledar (iPhone)', '', 'ics');
+    // Instagram's iPhone browser can't open a downloaded .ics; webcal:// hands it to the Calendar app instead.
+    var appleHref = (isIOS && isInApp) ? ics.replace(/^https?:/, 'webcal:') : ics;
+    var apple = a(appleHref, isAndroid ? 'Drug koledar (.ics)' : 'Apple koledar (iPhone)', '', 'ics');
     if (!isAndroid) $('calSub').hidden = false;
     var google = a((isAndroid && isInApp) ? chromeIntent(g) : g, 'Google koledar', '', 'google');
     if (isAndroid) { google.classList.add('primary'); box.appendChild(google); box.appendChild(apple); }
