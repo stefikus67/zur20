@@ -182,6 +182,8 @@
   .dons li + li { border-top: 1px solid var(--line); }
   .dons .ic { width: 40px; height: 40px; border-radius: 50%; background: #16161a; display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-weight: 700; color: var(--muted); }
   .dons .ic.paid { color: var(--ink); box-shadow: inset 0 0 0 2px var(--red); }
+  .dons .ic.top1 { background: var(--red); color: #fff; box-shadow: 0 0 14px rgba(var(--red-glow), .7); }
+  .dons .ic.top2, .dons .ic.top3 { background: #2a0a0e; }
   .dons .who { font-weight: 600; overflow-wrap: anywhere; }
   .dons .what { color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
   .ups { list-style: none; margin: 0; padding: 0; }
@@ -401,7 +403,7 @@
     </section>
 
     <section class="block reveal" id="donations">
-      <h2>Zadnje donacije</h2>
+      <h2>Lestvica donatorjev</h2>
       <ul class="dons" id="donList"></ul>
     </section>
 
@@ -573,12 +575,15 @@
       { who: 'Mama', amount: 0, note: 'Najprej izpiti.' }
     ];
     var list = $('donList'), paid = 0;
-    dons.slice(0, 12).forEach(function (d) {
-      if (!d || typeof d.who !== 'string' || !d.who.trim()) return;
-      var amt = Number(d.amount) || 0; if (amt > 0) paid++;
+    // leaderboard: biggest gift first; ties keep config order; zero "donations" stay at the bottom unranked
+    var board = dons.filter(function (d) { return d && typeof d.who === 'string' && d.who.trim(); })
+      .map(function (d, i) { return { d: d, i: i, a: Number(d.amount) || 0 }; })
+      .sort(function (p, q) { return (q.a - p.a) || (p.i - q.i); });
+    board.slice(0, 12).forEach(function (row) {
+      var d = row.d, amt = row.a; if (amt > 0) paid++;
       var li = document.createElement('li');
-      var ic = document.createElement('span'); ic.className = 'ic' + (amt > 0 ? ' paid' : ''); ic.setAttribute('aria-hidden', 'true');
-      ic.textContent = (d.who.trim().charAt(0) || '?').toUpperCase();
+      var ic = document.createElement('span'); ic.className = 'ic' + (amt > 0 ? ' paid' : '') + (amt > 0 && paid <= 3 ? ' top' + paid : ''); ic.setAttribute('aria-hidden', 'true');
+      ic.textContent = amt > 0 ? String(paid) : '–';
       var tx = document.createElement('span');
       var w = document.createElement('div'); w.className = 'who'; w.textContent = d.who;
       var x = document.createElement('div'); x.className = 'what';

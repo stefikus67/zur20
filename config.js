@@ -27,7 +27,7 @@ window.RSVP_CONFIG = {
   // The joke progress bar. Bump "raised" for the "fundraiser update" DM.
   fund: { raised: 73.97, goal: 287430, car: 'Porsche 911 GT3 RS' },
 
-  // Donations, newest first. Real ones from Revolut 12. 11. (70,28 EUR) + the joke base. Max 12 shown.
+  // Donations (page sorts them into a leaderboard by amount). Real ones from Revolut 12. 11. (70,28 EUR) + the joke base. Max 12 shown.
   donations: [
     { who: 'Urban K.', amount: 3.67, note: 'Rabm met še za svoj porsche.' },
     { who: 'Tanya S.', amount: 5, note: '' },
