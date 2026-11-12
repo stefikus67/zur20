@@ -12,7 +12,7 @@
 <meta property="og:title" content="Pomagaj Stepanu do Porscheja">
 <meta property="og:description" content="20 let praznujemo 20. 11. Zbiram za Porsche. Sprejemam samo gotovino. Petek, Caffe Bienale.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://stefikus67.github.io/zur20/assets/og.jpg">
+<meta property="og:image" content="https://stefikus67.github.io/zur20/assets/og.jpg?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Rdeča 20 in grafit: Need money for Porsche">
@@ -239,6 +239,8 @@
   .cal .stack { display: grid; gap: 10px; }
   .hint { font-size: 14px; color: var(--muted); margin: 10px 0 0; }
   .hint b { color: var(--ink); }
+  .hint.flash { animation: flash 1.2s ease-out; }
+  @keyframes flash { 0%, 30% { color: var(--ink); background: rgba(225,0,27,.35); } 100% { background: transparent; } }
   .cal .sub { margin: -6px 0 10px; color: var(--muted); font-size: 14px; }
   .manual { width: 100%; font: inherit; font-size: 15px; padding: 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: #111; color: var(--ink); user-select: text; -webkit-user-select: text; }
   .chip { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
@@ -724,21 +726,27 @@
     if (calBuilt) return; calBuilt = true;
     var box = $('calBtns'), hint = $('calHint'), esc = $('escape');
     var ics = absUrl(ICS_PATH), g = googleUrl();
-    // Instagram's iPhone browser can't open a downloaded .ics; webcal:// hands it to the Calendar app instead.
-    var appleHref = (isIOS && isInApp) ? ics.replace(/^https?:/, 'webcal:') : ics;
-    var apple = a(appleHref, isAndroid ? 'Drug koledar (.ics)' : 'Apple koledar (iPhone)', '', 'ics');
+    // Instagram's iPhone browser can't open the .ics (tested 12.11, webcal:// too): there Google goes first
+    // and the Apple button points to the Safari tip instead of a dead download.
+    var iosApp = isIOS && isInApp;
+    var apple = a(ics, isAndroid ? 'Drug koledar (.ics)' : (iosApp ? 'Apple koledar (v Safariju)' : 'Apple koledar (iPhone)'), '', 'ics');
     if (!isAndroid) $('calSub').hidden = false;
     var google = a((isAndroid && isInApp) ? chromeIntent(g) : g, 'Google koledar', '', 'google');
-    if (isAndroid) { google.classList.add('primary'); box.appendChild(google); box.appendChild(apple); }
+    if (isAndroid || iosApp) { google.classList.add('primary'); box.appendChild(google); box.appendChild(apple); }
     else { apple.classList.add('primary'); box.appendChild(apple); box.appendChild(google); }
+    if (iosApp) apple.addEventListener('click', function (e) {
+      e.preventDefault();
+      hint.classList.remove('flash'); void hint.offsetWidth; hint.classList.add('flash');
+      var c = esc.querySelector('button, input'); if (c) try { c.focus(); } catch (er) {}
+    });
 
     if (isIOS) {
       if (isInApp) {
         hint.innerHTML = '';
         var b = document.createElement('b');
-        b.textContent = 'Ne dela v ' + (appName === 'Instagram' ? 'Instagramu' : (appName === 'Facebook' ? 'Facebooku' : 'aplikaciji')) + '?';
+        b.textContent = 'Apple koledar:';
         hint.appendChild(b);
-        hint.appendChild(document.createTextNode(' Tapni ⋯ zgoraj desno → »Open in external browser«.'));
+        hint.appendChild(document.createTextNode(' tapni ⋯ zgoraj desno → »Open in external browser«.'));
         var copy = document.createElement('button');
         copy.type = 'button'; copy.textContent = 'Kopiraj povezavo za Safari';
         copy.addEventListener('click', function () { copyLink(copy); });
