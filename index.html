@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<title>Pomagaj Stepanu do Porscheja</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%2716%27 fill=%27%23e0001b%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 font-family=%27Arial%27 font-weight=%27900%27 text-anchor=%27middle%27 fill=%27white%27%3E20%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="Pomagaj Stepanu do Porscheja">
+<meta property="og:description" content="20 let praznujemo 20. 11. Zbiram za Porsche. Sprejemam samo gotovino. Petek, Caffe Bienale.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://stefikus67.github.io/zur20/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Rdeča 20 in grafit: Need money for Porsche">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&family=Unbounded:wght@500;700;800&display=swap" media="print" onload="this.media='all'">
+<style>
+  /* A fake crowdfunding page ("Fundraiser") staged like a Porsche showroom.
+     Loud: the hero stage (carbon, red floor light, a solid red "20", spray-painted "NEED MONEY FOR PORSCHE").
+     Quiet: everything below, so the parody reads like a real, polished platform.
+     Palette = the dress code, black + red. Red only where it means something. */
+  :root {
+    --black: #000000;
+    --surface: #0c0c0e;
+    --line: #232328;
+    --ink: #f4f3f1;
+    --muted: #a3a3aa;
+    --red: #e0001b;          /* Porsche red; white on it = 5.0:1 */
+    --red-hot: #ff3a4c;      /* red text on black = 6.0:1 */
+    --red-glow: 224, 0, 27;
+    --err: #ff5c6c;
+    --kraft: #c9a170;
+    --r-lg: 18px;
+    --r-sm: 12px;
+    --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --disp: "Unbounded", "Arial Black", "Segoe UI", sans-serif;
+    --spray: "Sedgwick Ave Display", "Impact", "Arial Black", "Helvetica Neue", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--black); }
+  body {
+    margin: 0; min-height: 100vh;
+    background: var(--black); color: var(--ink);
+    font: 17px/1.5 var(--ui);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body.has-bar { padding-bottom: calc(118px + env(safe-area-inset-bottom)); }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  /* the light in the room: one slow red haze drifting behind the whole page */
+  .ambient { position: fixed; inset: -20% -40%; z-index: 0; pointer-events: none;
+    background: radial-gradient(40% 30% at 30% 60%, rgba(var(--red-glow), .16), transparent 70%);
+    animation: drift 18s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translate3d(-6%, 0, 0); } to { transform: translate3d(10%, -8%, 0); } }
+
+  .wrap { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; }
+  .pad { padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+
+  /* ---------- hero: the showroom stage ---------- */
+  .hero { position: relative; overflow: hidden; background: var(--black); isolation: isolate;
+    padding: calc(max(14px, env(safe-area-inset-top)) + 52px) 0 clamp(52px, 9vh, 84px); text-align: center;
+    -webkit-mask-image: linear-gradient(180deg, #000 90%, transparent); mask-image: linear-gradient(180deg, #000 90%, transparent); }
+  .hero.expect-media, .hero.has-cutout, .hero.has-photo { min-height: clamp(320px, 64vh, 660px); }
+  @media (min-width: 560px) { .hero { border-radius: 0 0 var(--r-lg) var(--r-lg); } }
+  .stage, .stage > * { position: absolute; inset: 0; pointer-events: none; }
+  .stage { z-index: 0; }
+  .stage .carbon { /* woven carbon, barely there */
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 2px, transparent 2px 6px),
+      repeating-linear-gradient(-45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px),
+      linear-gradient(180deg, #121214 0%, #050505 60%, #000 100%); }
+  .stage .spot { background: radial-gradient(55% 45% at 50% 0%, rgba(255,255,255,.10), transparent 70%); }
+  .stage .floor { background: radial-gradient(70% 34% at 50% 100%, rgba(var(--red-glow), .70), rgba(var(--red-glow), .18) 45%, transparent 75%);
+    animation: flicker 7s steps(1, end) infinite; }
+  @keyframes flicker { 0%, 100% { opacity: 1; } 31% { opacity: .9; } 33% { opacity: 1; } 58% { opacity: .94; } 61% { opacity: 1; } 84% { opacity: .88; } 86% { opacity: 1; } }
+  .stage .horizon { top: auto; height: 1px; bottom: 16%; background: linear-gradient(90deg, transparent, rgba(var(--red-glow), .55), transparent); }
+  .stage .sweep { inset: -10% -60%; mix-blend-mode: screen; z-index: 2;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,90,110,0) 42%, rgba(255,120,135,.30) 50%, rgba(255,90,110,0) 58%, transparent 62%);
+    transform: translate3d(-60%, 0, 0); animation: sweep 9s cubic-bezier(.45,.05,.35,1) 1.2s infinite; }
+  @keyframes sweep { 0% { transform: translate3d(-60%, 0, 0); } 55%, 100% { transform: translate3d(60%, 0, 0); } }
+  .stage.over { z-index: 3; }   /* the sweep layer that passes over the 20 and the paint */
+  /* the 20: solid Porsche red, lit from above like paint on a car body */
+  .big20 { position: relative; z-index: 1; display: inline-block; pointer-events: none;
+    font-family: var(--disp); font-weight: 800; font-size: min(54vw, 32vh, 290px); line-height: .78; letter-spacing: -.045em;
+    color: var(--red);
+    background: linear-gradient(180deg, #ff4357 0%, #e0001b 42%, #a80014 78%, #7a000e 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 34px rgba(var(--red-glow), .45)) drop-shadow(0 18px 24px rgba(0,0,0,.6)); }
+  .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 18%; z-index: 3; pointer-events: none; background: linear-gradient(180deg, transparent, var(--black)); }
+
+  /* Stepan's own photo later: a cut-out (png) stands in front of the 20 and replaces the paint;
+     a normal photo (jpg/video) fills the stage. No file = the 20 + spray paint. */
+  .hero img, .hero video { position: absolute; z-index: 2; }
+  .hero img.cutout { left: 50%; bottom: 0; height: 88%; width: auto; max-width: 112%; transform: translateX(-50%); object-fit: contain; object-position: bottom center;
+    filter: drop-shadow(0 0 28px rgba(var(--red-glow), .35)); }
+  .hero img.photo, .hero video { inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; z-index: 1; filter: grayscale(1) contrast(1.05) brightness(.82); }
+  .hero.has-media .poster { display: none; }
+  .hero.has-photo .stage { z-index: 2; }
+  .hero.has-photo .stage .carbon, .hero.has-photo .stage .spot, .hero.has-photo .big20 { display: none; }
+  .hero.has-photo .stage .floor { mix-blend-mode: screen; opacity: .8; }
+
+  /* spray paint centred on the 20: white tag, soft overspray */
+  .mark { position: relative; display: inline-block; }
+  .poster { position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%); width: max-content; max-width: 94vw; pointer-events: none; }
+  .tagline-paint { display: block; transform: rotate(-7deg); font-family: var(--spray); font-weight: 400; color: #fff; text-align: center;
+    font-size: clamp(34px, min(12.6vw, 6.6vh), 60px); line-height: .92; letter-spacing: .01em;
+    text-shadow: 0 0 1px #fff, 0 0 5px rgba(255,255,255,.55), 0 0 16px rgba(255,255,255,.22), 2px 3px 0 rgba(0,0,0,.55), 0 0 30px rgba(0,0,0,.6); }
+  .tagline-paint span { display: block; white-space: nowrap; }
+
+  .topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 4; background: linear-gradient(180deg, rgba(0,0,0,.6), transparent); display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: 10px; text-align: left; }
+  .brand { display: flex; align-items: center; gap: 8px; font-family: var(--disp); font-weight: 700; font-size: 16px; letter-spacing: .02em; }
+  .brand i { width: 12px; height: 12px; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px rgba(var(--red-glow), .9); display: block; }
+  .pill { font-size: 13px; font-weight: 600; color: var(--ink); background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+    }
+
+  /* ---------- below the stage ---------- */
+  .invite { margin: -6px 0 0; position: relative; z-index: 4; padding: 13px 15px; background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 16px; overflow-wrap: anywhere; }
+  .invite b { font-weight: 800; }
+
+  h1 { font-family: var(--disp); font-size: 23px; line-height: 1.15; margin: 4px 0 10px; font-weight: 700; letter-spacing: -.01em; }
+  .panel.campaign { padding: 0; overflow: hidden; }
+  .campaign .car { margin: 0; position: relative; aspect-ratio: 16 / 10; background: #111; }
+  .campaign .car img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .campaign .car::after { content: ""; position: absolute; inset: auto 0 0 0; height: 40%; background: linear-gradient(180deg, transparent, rgba(12,12,14,.95)); }
+  .campaign .body { padding: 4px 18px 18px; position: relative; }
+  .goal { margin: -4px 0 14px; font-size: 15px; color: var(--muted); }
+  .goal b { color: var(--ink); font-weight: 700; }
+  .tag { margin: 18px 0 18px; font-family: var(--disp); font-size: 21px; line-height: 1.2; font-weight: 700; color: var(--red-hot); }
+  .org { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+  .ava { flex: 0 0 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--black); display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-weight: 700; font-size: 14px; }
+  .org b { color: var(--ink); font-weight: 600; }
+
+  .panel { background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; }
+
+  /* progress */
+  .raised { display: block; }
+  .raised .amt { font-family: var(--disp); font-size: 34px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .raised .of { display: block; color: var(--muted); font-size: 15px; margin-top: 2px; }
+  .bar { position: relative; height: 8px; border-radius: 99px; background: #1b1b20; margin: 14px 0 10px; overflow: visible; }
+  .bar span { position: relative; display: block; height: 100%; width: 3px; min-width: 4px; background: var(--red); border-radius: 99px;
+    box-shadow: 0 0 12px rgba(var(--red-glow), .9), 0 0 2px #fff; transform-origin: left; animation: grow 1.6s cubic-bezier(.2,.8,.2,1) .5s both; }
+  @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; font-size: 15px; color: var(--muted); }
+  .stats b { color: var(--ink); font-weight: 600; }
+
+  /* countdown */
+  .count { margin-top: 12px; }
+  .count h2 { margin-bottom: 12px; }
+  .cd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cd div { text-align: center; padding: 12px 4px 10px; border-radius: var(--r-sm); background: #0f0f12; border: 1px solid var(--line); }
+  .cd b { display: block; font-family: var(--disp); font-weight: 700; font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .cd span { display: block; font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .cd-note { margin: 10px 0 0; font-size: 15px; color: var(--muted); }
+
+  section.block { padding: 26px 0 0; }
+  h2 { font-family: var(--disp); font-size: 17px; margin: 0 0 12px; font-weight: 700; letter-spacing: 0; }
+  .story p { margin: 0 0 10px; }
+  .story p:last-child { margin-bottom: 0; }
+
+  .facts { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+  .facts li { display: grid; grid-template-columns: 104px 1fr; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .facts .k { color: var(--muted); font-size: 15px; padding-top: 1px; }
+  .facts .v { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+  .facts a { text-decoration-color: var(--red); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+  .route p { margin: 0 0 10px; }
+  .route b { font-weight: 700; }
+  .route .btn { margin-top: 6px; }
+
+  .gift p { margin: 0; overflow-wrap: anywhere; }
+
+  .dons { list-style: none; margin: 0; padding: 0; }
+  .dons li { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; padding: 10px 0; }
+  .dons li + li { border-top: 1px solid var(--line); }
+  .dons .ic { width: 40px; height: 40px; border-radius: 50%; background: #16161a; display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-weight: 700; color: var(--muted); }
+  .dons .ic.paid { color: var(--ink); box-shadow: inset 0 0 0 2px var(--red); }
+  .dons .who { font-weight: 600; overflow-wrap: anywhere; }
+  .dons .what { color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+  .ups { list-style: none; margin: 0; padding: 0; }
+  .ups li { padding: 6px 0; overflow-wrap: anywhere; }
+  .ups .d { color: var(--muted); font-size: 14px; display: block; }
+
+  /* ---------- buttons + click feedback ---------- */
+  button, .btn {
+    position: relative; overflow: hidden;
+    -webkit-appearance: none; appearance: none;
+    font-family: var(--disp); font-weight: 700; font-size: 16px; letter-spacing: .01em;
+    min-height: 56px; padding: 12px; border-radius: var(--r-sm);
+    border: 1.5px solid rgba(255,255,255,.85); background: transparent; color: var(--ink);
+    cursor: pointer; text-align: center; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+    transition: transform .12s ease, box-shadow .25s ease, background-color .2s ease;
+  }
+  button:active, .btn:active { transform: scale(.97); }
+  button:disabled { opacity: .55; cursor: default; transform: none; }
+  .primary { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 0 8px 24px rgba(var(--red-glow), .35); }
+  .primary:active { box-shadow: 0 0 0 6px rgba(var(--red-glow), .25), 0 8px 28px rgba(var(--red-glow), .55); }
+  .chosen { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .ripple { position: absolute; border-radius: 50%; pointer-events: none; background: rgba(255,255,255,.35); transform: scale(0); animation: ripple .55s ease-out forwards; }
+  @keyframes ripple { to { transform: scale(1); opacity: 0; } }
+  .linkbtn { font-family: var(--ui); background: none; border: 0; min-height: 44px; color: var(--muted); font-weight: 600; font-size: 16px; text-decoration: underline; text-underline-offset: 3px; padding: 8px; margin: 8px auto 0; overflow: visible; }
+
+  /* sticky RSVP bar */
+  #ask {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    background: rgba(0,0,0,.96); border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 30px rgba(0,0,0,.85);
+    padding: 10px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  #ask .in { max-width: 488px; margin: 0 auto; }
+  .q { margin: 0 0 8px; font-size: 15px; color: var(--muted); text-align: center; }
+  .q b { color: var(--ink); }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .status { margin: 8px 0 0; color: var(--muted); font-size: 15px; text-align: center; }
+  .status:empty { display: none; }
+  .status.err { color: var(--err); font-weight: 600; }
+
+  /* receipts */
+  .card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; margin: 16px 0 0; background: var(--surface); position: relative; z-index: 4; }
+  #yes > .card:first-child { box-shadow: 0 0 0 1px rgba(var(--red-glow), .5), 0 0 40px rgba(var(--red-glow), .22); }
+  .pop { animation: pop .5s cubic-bezier(.2,1.4,.4,1) both; }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .done-head { display: flex; gap: 14px; align-items: center; }
+  .tick { flex: 0 0 48px; height: 48px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 18px rgba(var(--red-glow), .6); }
+  .tick.no { background: #34343a; box-shadow: none; }
+  .done-head h2 { margin: 0; font-size: 19px; line-height: 1.25; overflow-wrap: anywhere; }
+  .done-head p { margin: 3px 0 0; color: var(--muted); font-size: 15px; }
+  .cal h3 { margin: 0 0 10px; font-size: 17px; }
+  .cal .stack { display: grid; gap: 10px; }
+  .hint { font-size: 14px; color: var(--muted); margin: 10px 0 0; }
+  .hint b { color: var(--ink); }
+  .cal .sub { margin: -6px 0 10px; color: var(--muted); font-size: 14px; }
+  .manual { width: 100%; font: inherit; font-size: 15px; padding: 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: #111; color: var(--ink); user-select: text; -webkit-user-select: text; }
+  .chip { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
+  .chip p { margin: 0 0 10px; }
+
+  .foot { text-align: center; color: var(--muted); font-size: 13px; margin: 32px 0 0; }
+  .foot p { margin: 0 0 5px; }
+  .foot .plus { font-size: 14px; color: var(--ink); opacity: .8; margin-bottom: 12px; }
+  [hidden] { display: none !important; }
+
+  /* scroll reveal: only when JS + IntersectionObserver are there (html.rv) */
+  html.rv .reveal { opacity: 0; transform: translate3d(0, 14px, 0); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  html.rv .reveal.in { opacity: 1; transform: none; }
+
+  .spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); border-top-color: var(--ink); animation: r .8s linear infinite; }
+  @keyframes r { to { transform: rotate(360deg); } }
+
+  /* hidden tab = no animation work */
+  html.paused *, html.paused *::before, html.paused *::after { animation-play-state: paused !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ambient, .stage .floor, .stage .sweep, .spin, .bar span, .pop, .ripple { animation: none !important; }
+    .stage .sweep { display: none; }
+    html.rv .reveal { opacity: 1; transform: none; transition: none; }
+    button, .btn { transition: none; }
+    button:active, .btn:active { transform: none; }
+  }
+  @media (max-height: 700px) { .tag { margin: 14px 0; } }
+  @media (max-height: 430px) { #ask .q { display: none; } button, .btn { min-height: 46px; padding: 8px; } #ask { padding-top: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); } }
+  @media (max-width: 340px) { .facts li { grid-template-columns: 1fr; gap: 0; } .btns { gap: 8px; } button, .btn { font-size: 14px; } h1 { font-size: 21px; } .tag { font-size: 19px; } .cd b { font-size: 21px; } }
+</style>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<main class="wrap">
+  <div class="hero" id="hero">
+    <div class="stage" aria-hidden="true"><div class="carbon"></div><div class="spot"></div><div class="floor"></div><div class="horizon"></div></div>
+    <div class="mark">
+      <div class="big20" aria-hidden="true">20</div>
+      <div class="poster" role="img" aria-label="Grafit: Need money for Porsche">
+        <span class="tagline-paint" aria-hidden="true"><span>NEED MONEY</span><span>FOR PORSCHE</span></span>
+      </div>
+    </div>
+    <div class="stage over" aria-hidden="true"><div class="sweep"></div></div>
+    <div class="fade" aria-hidden="true"></div>
+    <header class="topbar pad">
+      <div class="brand" aria-label="Fundraiser"><i aria-hidden="true"></i>Fundraiser</div>
+      <span class="pill">Zasebni fundraiser</span>
+    </header>
+  </div>
+
+  <div class="pad">
+    <p class="invite" id="banner"><b id="greet">Hej!</b> <span id="lead">Vabim te na svoj 20. rojstni dan.</span></p>
+
+    <!-- Answered: yes -->
+    <section id="yes" hidden>
+      <div class="card">
+        <div class="done-head">
+          <div class="tick" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.2 4.2L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div><h2 id="yesTitle">Super, vidimo se!</h2><p>Tvoj odgovor: <b>Pridem</b></p></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <h3>Dodaj v koledar</h3>
+        <p class="sub" id="calSub" hidden>Apple koledar te opomni dan prej in 3 ure prej.</p>
+        <div class="stack" id="calBtns"></div>
+        <p class="hint" id="calHint" hidden></p>
+        <div class="stack" id="escape" hidden style="margin-top:10px"></div>
+      </div>
+      <button type="button" class="linkbtn" data-change>Spremeni odgovor</button>
+    </section>
+
+    <!-- Answered: no -->
+    <section id="no" hidden>
+      <div class="card">
+        <div class="done-head">
+          <div class="tick no" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></div>
+          <div><h2 id="noTitle">Škoda! Hvala za odgovor.</h2><p>Tvoj odgovor: <b>Ne morem</b></p></div>
+        </div>
+        <div class="chip" id="revolutBox" hidden>
+          <p>Denar za Porsche se ne zbere sam. Izjemoma sprejmem tudi Revolut.</p>
+          <a class="btn" id="revolutBtn" href="#" target="_blank" rel="noopener noreferrer">Vseeno prispevam</a>
+        </div>
+      </div>
+      <button type="button" class="linkbtn" data-change>Spremeni odgovor</button>
+    </section>
+
+    <!-- No / bad link -->
+    <section id="nolink" hidden>
+      <div class="card"><p style="margin:0" id="nolinkText">Za odgovor odpri svojo osebno povezavo iz sporočila, ki ti ga je poslal Stepan.</p></div>
+    </section>
+
+    <p class="tag" id="tagline">20 let praznujemo 20.&nbsp;11.</p>
+
+    <div class="panel fund campaign" id="fund">
+      <figure class="car"><img src="assets/gt3rs.jpg" width="700" height="438" alt="Črn Porsche 911 GT3 RS z rdečimi platišči" decoding="async" onerror="this.parentNode.hidden=true"></figure>
+      <div class="body">
+        <h1 id="title">Pomagaj Stepanu do Porscheja</h1>
+        <div class="org"><span class="ava" aria-hidden="true">S</span><span><b>Stepan</b> organizira ta fundraiser v Ljubljani</span></div>
+        <p class="goal">Cilj: <b id="fCar">Porsche 911 GT3 RS</b></p>
+        <div class="raised"><span class="amt" id="fRaised">3,69 €</span><span class="of" id="fGoal">zbrano od 287.430 €</span></div>
+        <div class="bar" role="progressbar" aria-label="Zbrano" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="fBarWrap"><span id="fBar"></span></div>
+        <div class="stats"><span><b id="fLeft">Manjka 287.426,31 €</b></span><span id="fCount">2 donaciji</span><span id="fDays"></span></div>
+      </div>
+    </div>
+
+    <div class="panel count reveal" id="countdown">
+      <h2 id="cdTitle">Do žura</h2>
+      <div class="cd" id="cd" aria-live="off">
+        <div><b id="cdD">–</b><span id="cdDl">dni</span></div>
+        <div><b id="cdH">–</b><span id="cdHl">ur</span></div>
+        <div><b id="cdM">–</b><span>min</span></div>
+        <div><b id="cdS">–</b><span>s</span></div>
+      </div>
+      <p class="cd-note" id="cdNote">Petek, 20. 11., ob 21.00.</p>
+    </div>
+
+    <section class="block story reveal" id="story">
+      <h2>Zgodba</h2>
+      <p>Porsche bo moral še malo počakati, žur ne bo.</p>
+      <p>Pridi v petek, 20. 11., v Caffe Bienale na Tivolskem gradu.</p>
+    </section>
+
+    <section class="block reveal" id="facts">
+      <h2>Tehnični podatki</h2>
+      <ul class="facts">
+        <li><span class="k">Kdaj</span><span class="v">petek, 20. 11. 2026<br>od 21.00 do 1.00</span></li>
+        <li><span class="k">Kje</span><span class="v"><a id="maps" href="https://www.google.com/maps/search/?api=1&amp;query=Caffe%20Bienale%2C%20Pod%20turnom%203%2C%20Ljubljana">Caffe Bienale, Tivolski grad<br>Pod turnom 3, Ljubljana</a></span></li>
+        <li><span class="k">Hrana</span><span class="v">Bo.</span></li>
+        <li id="dressRow"><span class="k">Dress code</span><span class="v" id="dress">Black &amp; Red. Črna je obvezna, rdeča je za tiste, ki si upajo.</span></li>
+      </ul>
+    </section>
+
+    <section class="block route reveal" id="route">
+      <h2>Kako do gradu</h2>
+      <p><b>Peš:</b> iz centra skozi podhod pri Cankarjevi in naravnost po Jakopičevem sprehajališču do gradu. Približno 10 minut.</p>
+      <p><b>Z avtom:</b> parkiraš lahko na parkirišču Tivoli I ali Tivoli II.</p>
+      <a class="btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=Caffe%20Bienale%2C%20Pod%20turnom%203%2C%20Ljubljana&amp;travelmode=walking" target="_blank" rel="noopener noreferrer">Pot na zemljevidu</a>
+    </section>
+
+    <section class="block gift reveal" id="gift">
+      <h2 id="giftTitle">Kako prispevaš</h2>
+      <p id="giftText">Zbiram za Porsche. Sprejemam samo gotovino.</p>
+    </section>
+
+    <section class="block reveal" id="donations">
+      <h2>Zadnje donacije</h2>
+      <ul class="dons" id="donList"></ul>
+    </section>
+
+    <section class="block reveal" id="updates" hidden>
+      <h2>Novice</h2>
+      <ul class="ups" id="upList"></ul>
+    </section>
+
+    <div class="foot">
+      <p class="plus">Želiš koga pripeljati? Piši mi.</p>
+      <p id="foot">Odgovor lahko kadar koli spremeniš na tej povezavi.</p>
+      <p>Povezava je samo tvoja, zato je ne pošiljaj naprej.</p>
+      <p>Fundraiser ni pravi. Žur je.</p>
+    </div>
+  </div>
+</main>
+
+<!-- Ask: sticky bar -->
+<section id="ask">
+  <div class="in">
+    <p class="q" id="qLine"><b>Prideš?</b> <span id="qText">Odgovori do sobote, 14. 11.</span></p>
+    <div class="btns">
+      <button type="button" class="primary" data-v="yes" id="bYes">Pridem</button>
+      <button type="button" data-v="no" id="bNo">Ne morem</button>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.RSVP_CONFIG || {};
+  var EVENT = {
+    title: 'Stepan 20 – žur',
+    startUtc: '20261120T200000Z',   // 21:00 Ljubljana (CET, UTC+1)
+    endUtc: '20261121T000000Z',     // 01:00
+    location: 'Caffe Bienale, Tivolski grad, Pod turnom 3, 1000 Ljubljana',
+    details: 'Stepan praznuje 20 let. Žur: petek, 20. 11., Caffe Bienale, Tivolski grad, od 21.00 do 1.00.'
+  };
+  var ICS_PATH = 'assets/zur.ics';
+  var TOKEN_RE = /^[A-Za-z0-9_-]{6,40}$/;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(ua);
+  var isInApp = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|Line\/|TikTok|musical_ly|Snapchat|Twitter/i.test(ua);
+  var appName = /Instagram/i.test(ua) ? 'Instagram' : (/FBAN|FBAV|FB_IAB|FBIOS|Messenger/i.test(ua) ? 'Facebook' : 'ta aplikacija');
+
+  // ---------- storage (never trusted, never required) ----------
+  function sGet(k) { try { return JSON.parse(window.localStorage.getItem(k)); } catch (e) { return null; } }
+  function sSet(k, v) { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  // ---------- token ----------
+  function readToken() {
+    var t = '';
+    try { t = new URLSearchParams(location.search).get('t') || ''; } catch (e) {
+      var m = /[?&]t=([^&#]*)/.exec(location.search); t = m ? decodeURIComponent(m[1]) : '';
+    }
+    if (!t && location.hash) { var h = /[#&]t=([^&]*)/.exec(location.hash); if (h) t = decodeURIComponent(h[1]); }
+    t = String(t).trim();
+    return TOKEN_RE.test(t) ? t : '';
+  }
+  var token = readToken();
+  var KEY = 'rsvp20:' + token;
+
+  // ---------- name ----------
+  var firstName = '';
+  function setName(n) {
+    n = Array.from(n == null ? '' : String(n)).slice(0, 40).join('').trim();
+    firstName = n;
+    $('greet').textContent = n ? 'Hej, ' + n + '!' : 'Hej!';
+    $('yesTitle').textContent = n ? 'Super, ' + n + ', vidimo se!' : 'Super, vidimo se!';
+    $('noTitle').textContent = n ? 'Škoda, ' + n + '! Hvala za odgovor.' : 'Škoda! Hvala za odgovor.';
+  }
+
+  // ---------- hero + gift from config ----------
+  (function applyConfig() {
+    if (typeof C.giftTitle === 'string') { $('giftTitle').textContent = C.giftTitle; $('giftTitle').hidden = !C.giftTitle.trim(); }
+    if (typeof C.giftText === 'string') $('giftText').textContent = C.giftText;
+    if (typeof C.giftText === 'string' && !C.giftText.trim()) $('gift').hidden = true;
+    var hero = $('hero');
+    // The photo replaces the drawn sign only once it has really loaded, so a missing
+    // assets/hero.jpg just leaves the sign (no blank hero, no flash).
+    // Candidates in order: heroImage (a cut-out .png stands on the stage), then heroPhoto
+    // (a normal photo fills the stage). Each replaces the drawn sign only once it has loaded,
+    // so a missing file just leaves the sign: no blank hero, no flash.
+    var imgs = [C.heroImage, C.heroPhoto].filter(function (x) { return typeof x === 'string' && x.trim(); });
+    if (imgs.length || C.heroVideo) hero.classList.add('expect-media');   // keep the height: no jump when the photo lands
+    function addImg(i) {
+      i = i || 0;
+      if (i >= imgs.length) { hero.classList.remove('expect-media'); return; }
+      var src = imgs[i], img = document.createElement('img');
+      img.alt = 'Stepan s kartonskim napisom: Need money for Porsche';
+      img.className = /\.png(\?|$)/i.test(src) ? 'cutout' : 'photo';
+      img.decoding = 'async';
+      var gaveUp = false, timer = setTimeout(function () { gaveUp = true; addImg(i + 1); }, 6000);
+      img.onload = function () {
+        clearTimeout(timer);
+        if (gaveUp || img.parentNode || hero.classList.contains('has-media')) return;
+        hero.insertBefore(img, hero.querySelector('.fade'));
+        hero.classList.add('has-media', img.className === 'photo' ? 'has-photo' : 'has-cutout');
+      };
+      img.onerror = function () { clearTimeout(timer); if (img.parentNode) img.remove(); hero.classList.remove('has-media', 'has-photo', 'has-cutout'); if (!gaveUp) addImg(i + 1); };
+      img.src = src;
+    }
+    var calm = false; try { calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (C.heroVideo && calm && imgs.length) {
+      addImg();
+    } else if (C.heroVideo) {
+      var v = document.createElement('video');
+      v.src = C.heroVideo; v.muted = true; v.autoplay = true; v.loop = true; v.playsInline = true;
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+      if (C.heroImage) v.poster = C.heroImage;
+      v.onerror = function () { v.remove(); hero.classList.remove('has-media', 'has-photo'); addImg(); };
+      hero.insertBefore(v, hero.querySelector('.fade')); hero.classList.add('has-media', 'has-photo');
+      var p = v.play && v.play(); if (p && p.catch) p.catch(function () {});
+    } else {
+      addImg();
+    }
+  })();
+
+  // ---------- fundraiser parody (all text from config goes in as text, never HTML) ----------
+  function eur(n) {
+    n = Number(n); if (!isFinite(n) || n < 0) n = 0; n = Math.min(n, 999999999999);
+    var whole = Math.floor(n), cents = Math.round((n - whole) * 100);
+    if (cents === 100) { whole += 1; cents = 0; }
+    var s = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return s + (cents ? ',' + (cents < 10 ? '0' : '') + cents : '') + ' €';
+  }
+  function plural(n, one, two, few, many) {
+    var m = n % 100;
+    return m === 1 ? one : m === 2 ? two : (m === 3 || m === 4) ? few : many;
+  }
+  (function applyFund() {
+    var F = C.fund || {};
+    var raised = Number(F.raised); if (!(raised >= 0) || !isFinite(raised)) raised = 3.69; raised = Math.min(raised, 999999999999);
+    var goal = Number(F.goal); if (!(goal > 0) || !isFinite(goal)) goal = 287430;
+    if (typeof F.car === 'string' && F.car.trim()) $('fCar').textContent = F.car; goal = Math.min(goal, 999999999999);
+    $('fRaised').textContent = eur(raised);
+    if (!reduceMotion() && !document.hidden && raised > 0 && raised < 1000 && window.requestAnimationFrame) {
+      var t0 = null, el = $('fRaised'), done = false;
+      el.textContent = eur(0);
+      var step = function (ts) {
+        if (done) return;
+        if (t0 === null) t0 = ts;
+        var k = Math.min(1, (ts - t0 - 500) / 1600);
+        if (k < 0) k = 0;
+        var e = 1 - Math.pow(1 - k, 3);
+        el.textContent = k >= 1 ? eur(raised) : eur(Math.floor(raised * e * 100) / 100);
+        if (k < 1) requestAnimationFrame(step); else done = true;
+      };
+      requestAnimationFrame(step);
+      setTimeout(function () { done = true; el.textContent = eur(raised); }, 2600);   // never stuck mid-count (hidden tabs pause rAF)
+    }
+    $('fGoal').textContent = 'zbrano od ' + eur(goal);
+    $('fLeft').textContent = raised >= goal ? 'Cilj dosežen. Res?' : 'Manjka ' + eur(goal - raised);
+    var pct = Math.min(100, raised / goal * 100);
+    $('fBar').style.width = pct.toFixed(4) + '%';
+    $('fBarWrap').setAttribute('aria-valuenow', pct.toFixed(4));
+
+    var dons = Array.isArray(C.donations) ? C.donations : [
+      { who: 'Anonimno', amount: 3, note: 'Za ventilčke.' },
+      { who: 'Stepan', amount: 0.69, note: 'Drobiž iz žepa.' },
+      { who: 'Banka', amount: 0, note: 'Kredit zavrnjen.' },
+      { who: 'Mama', amount: 0, note: 'Najprej izpiti.' }
+    ];
+    var list = $('donList'), paid = 0;
+    dons.slice(0, 8).forEach(function (d) {
+      if (!d || typeof d.who !== 'string' || !d.who.trim()) return;
+      var amt = Number(d.amount) || 0; if (amt > 0) paid++;
+      var li = document.createElement('li');
+      var ic = document.createElement('span'); ic.className = 'ic' + (amt > 0 ? ' paid' : ''); ic.setAttribute('aria-hidden', 'true');
+      ic.textContent = (d.who.trim().charAt(0) || '?').toUpperCase();
+      var tx = document.createElement('span');
+      var w = document.createElement('div'); w.className = 'who'; w.textContent = d.who;
+      var x = document.createElement('div'); x.className = 'what';
+      x.textContent = eur(amt) + (d.note ? ' – ' + d.note : '');
+      tx.appendChild(w); tx.appendChild(x); li.appendChild(ic); li.appendChild(tx); list.appendChild(li);
+    });
+    $('donations').hidden = !list.children.length;
+    $('fCount').textContent = paid + ' ' + plural(paid, 'donacija', 'donaciji', 'donacije', 'donacij');
+
+    var ups = Array.isArray(C.updates) ? C.updates : [];
+    ups.slice(0, 6).forEach(function (u) {
+      if (!u || typeof u.text !== 'string' || !u.text.trim()) return;
+      var li = document.createElement('li');
+      if (u.date) { var d = document.createElement('span'); d.className = 'd'; d.textContent = String(u.date); li.appendChild(d); }
+      li.appendChild(document.createTextNode(u.text));
+      $('upList').appendChild(li);
+    });
+    $('updates').hidden = !$('upList').children.length;
+
+    if (typeof C.dressCode === 'string') { $('dress').textContent = C.dressCode; $('dressRow').hidden = !C.dressCode.trim(); }
+
+    // days to the party: Fri 20. 11. 2026 21.00 Ljubljana = 20.00 UTC
+    var now = Date.now();
+    var days = Math.floor(Date.UTC(2026, 10, 20) / 86400000) - Math.floor((now + 3600000) / 86400000);
+    var dd = $('fDays');
+    if (now >= Date.UTC(2026, 10, 20, 20, 0, 0) || days < 0) { dd.hidden = true; }
+    else if (days === 0) { dd.textContent = 'Žur je danes'; }
+    else { dd.textContent = 'Še ' + days + ' ' + plural(days, 'dan', 'dneva', 'dnevi', 'dni'); }
+
+    var rv = typeof C.revolutUrl === 'string' ? C.revolutUrl.trim() : '';
+    if (/^https:\/\/revolut\.me\/[A-Za-z0-9._-]{2,}\/?(\?[^#\s]*)?$/i.test(rv)) {
+      $('revolutBtn').href = rv;
+      $('revolutBox').hidden = false;
+    }
+  })();
+
+  function reduceMotion() { try { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
+
+  var partyOver = false, view = 'ask';
+  // ---------- live countdown to Fri 20. 11. 2026 21.00 Ljubljana (= 20.00 UTC) ----------
+  (function countdown() {
+    var START = Date.UTC(2026, 10, 20, 20, 0, 0), END = Date.UTC(2026, 10, 21, 0, 0, 0);
+    partyOver = Date.now() >= END;
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var DEADLINE = Date.UTC(2026, 10, 14, 23, 0, 0);   // Sun 15. 11. 00.00 Ljubljana = deadline Sat 14. 11. 23.59 passed
+    function tick() {
+      var now = Date.now(), ms = START - now;
+      if (now >= DEADLINE) $('qText').textContent = now >= START ? 'Žur že poteka.' : '';
+      if (ms <= 0) {
+        $('cd').hidden = true;
+        $('cdTitle').textContent = 'Žur';
+        $('cdNote').textContent = now < END ? 'Žur je zdaj. Pridi.' : 'Žur je mimo. Hvala!';
+        if (now >= END && !partyOver) { partyOver = true; if (typeof show === 'function') show(view); }
+        return now < END;
+      }
+      var s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+      $('cdD').textContent = d; $('cdH').textContent = pad(h); $('cdM').textContent = pad(m); $('cdS').textContent = pad(s % 60);
+      $('cdDl').textContent = plural(d, 'dan', 'dneva', 'dnevi', 'dni');
+      $('cdHl').textContent = plural(h, 'ura', 'uri', 'ure', 'ur');
+      return true;
+    }
+    if (tick()) {
+      var iv = setInterval(function () { if (!document.hidden && !tick()) clearInterval(iv); }, 1000);
+    }
+  })();
+
+  // ---------- motion helpers ----------
+  (function motion() {
+    var root = document.documentElement;
+    document.addEventListener('visibilitychange', function () { root.classList.toggle('paused', !!document.hidden); });
+    // fade-in on scroll, only where IntersectionObserver exists; content stays visible otherwise
+    if (!reduceMotion() && 'IntersectionObserver' in window) {
+      root.classList.add('rv');
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+      Array.prototype.forEach.call(document.querySelectorAll('.reveal'), function (el) { io.observe(el); });
+      setTimeout(function () { Array.prototype.forEach.call(document.querySelectorAll('.reveal'), function (el) { el.classList.add('in'); }); }, 4000);
+    }
+    // ripple on press: Pridem, Ne morem, Vseeno prispevam, calendar buttons
+    document.addEventListener('pointerdown', function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('button:not(.linkbtn), .btn') : null;
+      if (!b || b.disabled || reduceMotion()) return;
+      var r = b.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2.2;
+      var dot = document.createElement('span');
+      dot.className = 'ripple'; dot.setAttribute('aria-hidden', 'true');
+      dot.style.width = dot.style.height = size + 'px';
+      dot.style.left = (ev.clientX - r.left - size / 2) + 'px';
+      dot.style.top = (ev.clientY - r.top - size / 2) + 'px';
+      b.appendChild(dot);
+      setTimeout(function () { if (dot.parentNode) dot.parentNode.removeChild(dot); }, 650);
+    }, { passive: true });
+  })();
+
+  // ---------- views ----------
+  function show(v) {
+    view = v;
+    ['ask', 'yes', 'no', 'nolink'].forEach(function (id) { $(id).hidden = (id !== v); });
+    if (partyOver) $('ask').hidden = true;   // after 01.00 there is nothing left to answer
+    $('lead').hidden = (v !== 'ask');
+    $('banner').hidden = (v === 'yes' || v === 'no');   // the receipt already greets by name
+    $('foot').hidden = (v === 'nolink');
+    document.body.classList.toggle('has-bar', v === 'ask' && !partyOver);
+    fitBar();
+    if (v === 'yes') buildCalendar();
+    if (userActed && (v === 'yes' || v === 'no')) {
+      var card = $(v).querySelector('.card');
+      if (card && !reduceMotion()) { card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop'); }
+      var h = $(v === 'yes' ? 'yesTitle' : 'noTitle');
+      try { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } catch (e) {}
+    }
+  }
+  // keep room under the page for the fixed bar, whatever height its status line gives it
+  function fitBar() {
+    var bar = $('ask');
+    var room = (view === 'ask' && !bar.hidden && bar.offsetHeight) ? (bar.offsetHeight + 16) + 'px' : '';
+    document.body.style.paddingBottom = room;
+    document.documentElement.style.scrollPaddingBottom = room;
+  }
+  document.addEventListener('focusin', function (ev) {
+    var bar = $('ask'), el = ev.target;
+    if (bar.hidden || !el || bar.contains(el) || !el.getBoundingClientRect) return;
+    var over = el.getBoundingClientRect().bottom + 12 - bar.getBoundingClientRect().top;
+    if (over > 0) { try { window.scrollBy(0, over); } catch (e) {} }
+  });
+  if (window.ResizeObserver) { try { new ResizeObserver(fitBar).observe($('ask')); } catch (e) {} }
+  window.addEventListener('resize', fitBar);
+  function status(msg, isErr) {
+    var s = $('status'); s.textContent = msg || ''; s.className = 'status' + (isErr ? ' err' : '');
+    fitBar();
+  }
+  function markChosen(ans) {
+    $('bYes').classList.toggle('chosen', ans === 'yes');
+    $('bNo').classList.toggle('chosen', ans === 'no');
+  }
+
+  // ---------- calendar ----------
+  function absUrl(p) { try { return new URL(p, location.href).href; } catch (e) { return p; } }
+  function googleUrl() {
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+      '&text=' + encodeURIComponent(EVENT.title) +
+      '&dates=' + EVENT.startUtc + '/' + EVENT.endUtc +
+      '&ctz=Europe%2FLjubljana' +
+      '&location=' + encodeURIComponent(EVENT.location) +
+      '&details=' + encodeURIComponent(EVENT.details);
+  }
+  // Android: hand a URL to Chrome from inside Instagram's WebView; falls back to the URL itself.
+  function chromeIntent(url) {
+    var u = url.replace(/^https?:\/\//, '');
+    return 'intent://' + u + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+  }
+  function a(href, text, cls, note) {
+    var el = document.createElement('a');
+    el.href = href; el.className = 'btn' + (cls ? ' ' + cls : ''); el.textContent = text;
+    if (note) el.setAttribute('data-note', note);
+    return el;
+  }
+  var calBuilt = false;
+  function buildCalendar() {
+    if (calBuilt) return; calBuilt = true;
+    var box = $('calBtns'), hint = $('calHint'), esc = $('escape');
+    var ics = absUrl(ICS_PATH), g = googleUrl();
+    var apple = a(ics, isAndroid ? 'Drug koledar (.ics)' : 'Apple koledar (iPhone)', '', 'ics');
+    if (!isAndroid) $('calSub').hidden = false;
+    var google = a((isAndroid && isInApp) ? chromeIntent(g) : g, 'Google koledar', '', 'google');
+    if (isAndroid) { google.classList.add('primary'); box.appendChild(google); box.appendChild(apple); }
+    else { apple.classList.add('primary'); box.appendChild(apple); box.appendChild(google); }
+
+    if (isIOS) {
+      if (isInApp) {
+        hint.innerHTML = '';
+        var b = document.createElement('b');
+        b.textContent = 'Ne dela v ' + (appName === 'Instagram' ? 'Instagramu' : (appName === 'Facebook' ? 'Facebooku' : 'aplikaciji')) + '?';
+        hint.appendChild(b);
+        hint.appendChild(document.createTextNode(' Tapni ⋯ zgoraj desno → »Open in external browser«.'));
+        var copy = document.createElement('button');
+        copy.type = 'button'; copy.textContent = 'Kopiraj povezavo za Safari';
+        copy.addEventListener('click', function () { copyLink(copy); });
+        esc.appendChild(copy); esc.hidden = false;
+        hint.hidden = false;
+      }
+    } else if (isAndroid && isInApp) {
+      hint.textContent = 'Ne dela? Tapni ⋮ zgoraj desno → »Open in Chrome«.';
+      hint.hidden = false;
+      var open = a(chromeIntent(location.origin + location.pathname + '?t=' + encodeURIComponent(token)), 'Odpri to stran v Chromu');
+      esc.appendChild(open); esc.hidden = false;
+    }
+  }
+  function copyLink(btn) {
+    var url = location.href;
+    var done = function (ok) {
+      if (ok) { btn.textContent = 'Kopirano. Prilepi v Safari.'; return; }
+      var inp = document.createElement('input');
+      inp.className = 'manual'; inp.readOnly = true; inp.value = url; inp.setAttribute('aria-label', 'Povezava');
+      btn.parentNode.replaceChild(inp, btn);
+      var lab = document.createElement('p'); lab.className = 'hint'; lab.textContent = 'Drži prst na povezavi, izberi Kopiraj in jo prilepi v Safari.';
+      inp.parentNode.insertBefore(lab, inp);
+      try { inp.focus(); inp.select(); inp.setSelectionRange(0, url.length); } catch (e) {}
+    };
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(legacyCopy(url)); });
+        return;
+      }
+    } catch (e) {}
+    done(legacyCopy(url));
+  }
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-1000px';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+      var ok = document.execCommand('copy'); document.body.removeChild(ta); return !!ok;
+    } catch (e) { return false; }
+  }
+
+  // ---------- API ----------
+  var apiReady = C.apiUrl && /^https?:\/\//.test(C.apiUrl) || (C.apiUrl && C.apiUrl.charAt(0) === '/');
+  function callOnce(params, timeoutMs) {
+    var qs = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    var url = C.apiUrl + (C.apiUrl.indexOf('?') >= 0 ? '&' : '?') + qs + '&_=' + Date.now();
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, timeoutMs);
+    return fetch(url, { method: 'GET', cache: 'no-store', redirect: 'follow', credentials: 'omit', signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
+        clearTimeout(timer);
+        var j; try { j = JSON.parse(txt); } catch (e) { throw new Error('bad-json'); }
+        if (!j || typeof j !== 'object') throw new Error('bad-json');
+        if (j.ok === false && j.error !== 'token' && j.error !== 'value') throw new Error(j.error || 'server');
+        return j;
+      }, function (e) { clearTimeout(timer); throw e; });
+  }
+  // Retries with backoff + jitter until a total deadline, so the guest never waits on a dead spinner.
+  function call(params, perTryMs, deadlineMs, maxTries) {
+    var attempt = 0, t0 = Date.now();
+    return new Promise(function (resolve, reject) {
+      (function go() {
+        attempt++;
+        var left = deadlineMs - (Date.now() - t0);
+        callOnce(params, Math.max(1500, Math.min(perTryMs, left))).then(resolve, function (err) {
+          // spread retries out (jitter) so a burst against Apps Script's 30-call limit drains instead of hammering it
+          var wait = Math.min(6000, 1000 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 1000);
+          if (attempt >= maxTries || Date.now() - t0 + wait + 1500 > deadlineMs) return reject(err);
+          setTimeout(go, wait);
+        });
+      })();
+    });
+  }
+  function spinStatus(text) {
+    var s = $('status'); s.className = 'status'; s.innerHTML = '';
+    var sp = document.createElement('span'); sp.className = 'spin'; sp.style.display = 'inline-block'; sp.style.verticalAlign = '-3px'; sp.style.marginRight = '8px';
+    s.appendChild(sp); s.appendChild(document.createTextNode(text));
+    fitBar();
+  }
+
+  // ---------- flow ----------
+  var userActed = false, saving = false;
+
+  function applyServer(j) {
+    if (!j) return;
+    if (j.ok === false && j.error === 'token') {
+      $('nolinkText').textContent = 'Ta povezava ne deluje. Piši Stepanu, da ti pošlje novo.';
+      show('nolink'); return;
+    }
+    if ('name' in j) setName(j.name);
+    var local = sGet(KEY);
+    if (local && local.pending) return; // our unsent answer wins; it is being resent
+    if (!userActed && view !== 'nolink') {
+      if (j.answer === 'yes' || j.answer === 'no') { sSet(KEY, { answer: j.answer, name: firstName }); markChosen(j.answer); show(j.answer); }
+      else { show('ask'); }
+    }
+  }
+
+  function save(ans, isResend) {
+    if (saving) return;
+    saving = true; userActed = true;
+    sSet(KEY, { answer: ans, name: firstName, pending: true });
+    markChosen(ans);
+    $('bYes').disabled = true; $('bNo').disabled = true;
+    spinStatus('Shranjujem …');
+    if (!apiReady) { finishFail('Povezava še ni nastavljena. Piši Stepanu.'); return; }
+    var slow = setTimeout(function () { if (saving) spinStatus('Še trenutek …'); }, 6000);
+    call({ a: 'set', t: token, v: ans }, 12000, 30000, 5).then(function (j) {
+      clearTimeout(slow);
+      saving = false;
+      $('bYes').disabled = false; $('bNo').disabled = false;
+      if (j.ok === false && j.error === 'token') { applyServer(j); return; }
+      if (j.ok === false) { finishFail(); return; }
+      if ('name' in j) setName(j.name);
+      sSet(KEY, { answer: ans, name: firstName });
+      status('');
+      show(ans);
+      try { window.scrollTo(0, 0); } catch (e) {}
+    }, function () { clearTimeout(slow); finishFail(); });
+  }
+  function finishFail(msg) {
+    saving = false;
+    $('bYes').disabled = false; $('bNo').disabled = false;
+    show('ask');
+    status(msg || 'Shranjevanje ni uspelo. Preveri povezavo z internetom in tapni še enkrat.', true);
+  }
+
+  // events
+  $('bYes').addEventListener('click', function () { save('yes'); });
+  $('bNo').addEventListener('click', function () { save('no'); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-change]'), function (b) {
+    b.addEventListener('click', function () {
+      userActed = true; status(''); show('ask');
+      try { window.scrollTo(0, 0); } catch (e) {}
+      var f = document.querySelector('#ask .chosen') || $('bYes');
+      try { f.focus({ preventScroll: true }); } catch (e) {}
+    });
+  });
+
+  // ---------- start ----------
+  if (!token) { show('nolink'); return; }
+
+  var cached = sGet(KEY);
+  if (cached && cached.name) setName(cached.name);
+  if (cached && cached.pending && (cached.answer === 'yes' || cached.answer === 'no')) {
+    save(cached.answer, true);          // last tap never reached the server: resend
+  } else if (cached && (cached.answer === 'yes' || cached.answer === 'no')) {
+    markChosen(cached.answer); show(cached.answer);   // instant, server confirms below
+  } else {
+    show('ask');
+    if (apiReady) spinStatus('Preverjam tvoj odgovor …');   // buttons stay live: one tap still works
+  }
+  if (apiReady) {
+    var clearLoading = function () { if (!saving && $('status').className === 'status') status(''); };
+    call({ a: 'get', t: token }, 12000, 25000, 4).then(function (j) { clearLoading(); applyServer(j); }, function () {
+      clearLoading();
+      if (!saving && !userActed && view === 'ask') status('Tvojega odgovora ta hip ne morem preveriti. Lahko odgovoriš še enkrat.');
+    });
+  }
+})();
+</script>
+</body>
+</html>
