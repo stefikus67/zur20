@@ -408,7 +408,7 @@
 <!-- Ask: sticky bar -->
 <section id="ask">
   <div class="in">
-    <p class="q" id="qLine"><b>Prideš?</b> <span id="qText">Odgovori do sobote, 14. 11.</span></p>
+    <p class="q" id="qLine"><b>Prideš?</b> <span id="qText">Odgovori do nedelje, 15. 11.</span></p>
     <div class="btns">
       <button type="button" class="primary" data-v="yes" id="bYes">Pridem</button>
       <button type="button" data-v="no" id="bNo">Ne morem</button>
@@ -608,7 +608,7 @@
     var START = Date.UTC(2026, 10, 20, 20, 0, 0), END = Date.UTC(2026, 10, 21, 0, 0, 0);
     partyOver = Date.now() >= END;
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-    var DEADLINE = Date.UTC(2026, 10, 14, 23, 0, 0);   // Sun 15. 11. 00.00 Ljubljana = deadline Sat 14. 11. 23.59 passed
+    var DEADLINE = Date.UTC(2026, 10, 15, 23, 0, 0);   // Mon 16. 11. 00.00 Ljubljana = deadline Sun 15. 11. 23.59 passed
     function tick() {
       var now = Date.now(), ms = START - now;
       if (now >= DEADLINE) $('qText').textContent = now >= START ? 'Žur že poteka.' : '';
