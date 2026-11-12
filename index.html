@@ -573,7 +573,7 @@
       { who: 'Mama', amount: 0, note: 'Najprej izpiti.' }
     ];
     var list = $('donList'), paid = 0;
-    dons.slice(0, 8).forEach(function (d) {
+    dons.slice(0, 12).forEach(function (d) {
       if (!d || typeof d.who !== 'string' || !d.who.trim()) return;
       var amt = Number(d.amount) || 0; if (amt > 0) paid++;
       var li = document.createElement('li');
