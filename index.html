@@ -219,6 +219,7 @@
   }
   #ask .in { max-width: 488px; margin: 0 auto; }
   .askinline { margin: 14px 0 18px; }
+  .fundlink { display: block; width: max-content; margin: 10px auto 0; }
   body.inline-on #ask { visibility: hidden; }
   .q { margin: 0 0 8px; font-size: 15px; color: var(--muted); text-align: center; }
   .q b { color: var(--ink); }
@@ -356,6 +357,7 @@
         <div class="raised"><span class="amt" id="fRaised">3,69 €</span><span class="of" id="fGoal">zbrano od 287.430 €</span></div>
         <div class="bar" role="progressbar" aria-label="Zbrano" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="fBarWrap"><span id="fBar"></span></div>
         <div class="stats"><span><b id="fLeft">Manjka 287.426,31 €</b></span><span id="fCount">2 donaciji</span><span id="fDays"></span></div>
+        <a class="linkbtn fundlink" id="fundBtn" href="#" target="_blank" rel="noopener noreferrer" hidden>Prispevam za Porsche</a>
       </div>
     </div>
 
@@ -434,6 +436,7 @@
 (function () {
   'use strict';
   var C = window.RSVP_CONFIG || {};
+  var fundOk = false;   // Revolut link is valid -> small "Prispevam" link under the fundraiser
   var EVENT = {
     title: 'Stepan 20 – žur',
     startUtc: '20261120T200000Z',   // 21:00 Ljubljana (CET, UTC+1)
@@ -609,6 +612,7 @@
     if (/^https:\/\/revolut\.me\/[A-Za-z0-9._-]{2,}\/?(\?[^#\s]*)?$/i.test(rv)) {
       $('revolutBtn').href = rv;
       $('revolutBox').hidden = false;
+      $('fundBtn').href = rv; fundOk = true; $('fundBtn').hidden = (view === 'no');
     }
   })();
 
@@ -676,6 +680,7 @@
     ['ask', 'yes', 'no', 'nolink'].forEach(function (id) { $(id).hidden = (id !== v); });
     if (partyOver) $('ask').hidden = true;   // after 01.00 there is nothing left to answer
     $('askInline').hidden = (v !== 'ask') || !!partyOver;
+    $('fundBtn').hidden = !fundOk || v === 'no';   // "Ne morem" already shows the bigger Revolut box
     $('lead').hidden = (v !== 'ask');
     $('banner').hidden = (v === 'yes' || v === 'no');   // the receipt already greets by name
     $('foot').hidden = (v === 'nolink');
