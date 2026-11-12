@@ -218,6 +218,8 @@
     padding: 10px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   }
   #ask .in { max-width: 488px; margin: 0 auto; }
+  .askinline { margin: 14px 0 18px; }
+  body.inline-on #ask { visibility: hidden; }
   .q { margin: 0 0 8px; font-size: 15px; color: var(--muted); text-align: center; }
   .q b { color: var(--ink); }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -294,6 +296,16 @@
 
   <div class="pad">
     <p class="invite" id="banner"><b id="greet">Hej!</b> <span id="lead">Vabim te na svoj 20. rojstni dan.</span></p>
+
+    <!-- Ask, in the page itself: Instagram's iPhone browser can hide the fixed bottom bar -->
+    <div class="askinline" id="askInline" hidden>
+      <p class="q"><b>Prideš?</b> Odgovori do nedelje, 15. 11.</p>
+      <div class="btns">
+        <button type="button" class="primary" data-v="yes" id="bYes2">Pridem</button>
+        <button type="button" data-v="no" id="bNo2">Ne morem</button>
+      </div>
+      <p class="status" id="status2" role="status" aria-live="polite"></p>
+    </div>
 
     <!-- Answered: yes -->
     <section id="yes" hidden>
@@ -663,6 +675,7 @@
     view = v;
     ['ask', 'yes', 'no', 'nolink'].forEach(function (id) { $(id).hidden = (id !== v); });
     if (partyOver) $('ask').hidden = true;   // after 01.00 there is nothing left to answer
+    $('askInline').hidden = (v !== 'ask') || !!partyOver;
     $('lead').hidden = (v !== 'ask');
     $('banner').hidden = (v === 'yes' || v === 'no');   // the receipt already greets by name
     $('foot').hidden = (v === 'nolink');
@@ -690,15 +703,22 @@
     if (over > 0) { try { window.scrollBy(0, over); } catch (e) {} }
   });
   if (window.ResizeObserver) { try { new ResizeObserver(fitBar).observe($('ask')); } catch (e) {} }
+  // the bottom bar steps aside while the in-page buttons are on screen (no double buttons)
+  if (window.IntersectionObserver) { try { new IntersectionObserver(function (es) { document.body.classList.toggle('inline-on', !!(es[0] && es[0].isIntersecting)); }).observe($('askInline')); } catch (e) {} }
   window.addEventListener('resize', fitBar);
   function status(msg, isErr) {
     var s = $('status'); s.textContent = msg || ''; s.className = 'status' + (isErr ? ' err' : '');
+    mirrorStatus();
     fitBar();
   }
   function markChosen(ans) {
     $('bYes').classList.toggle('chosen', ans === 'yes');
     $('bNo').classList.toggle('chosen', ans === 'no');
+    $('bYes2').classList.toggle('chosen', ans === 'yes');
+    $('bNo2').classList.toggle('chosen', ans === 'no');
   }
+  function setBtns(off) { ['bYes', 'bNo', 'bYes2', 'bNo2'].forEach(function (id) { $(id).disabled = off; }); }
+  function mirrorStatus() { var a = $('status'), b = $('status2'); b.className = a.className; b.innerHTML = a.innerHTML; }
 
   // ---------- calendar ----------
   function absUrl(p) { try { return new URL(p, location.href).href; } catch (e) { return p; } }
@@ -825,6 +845,7 @@
     var s = $('status'); s.className = 'status'; s.innerHTML = '';
     var sp = document.createElement('span'); sp.className = 'spin'; sp.style.display = 'inline-block'; sp.style.verticalAlign = '-3px'; sp.style.marginRight = '8px';
     s.appendChild(sp); s.appendChild(document.createTextNode(text));
+    mirrorStatus();
     fitBar();
   }
 
@@ -851,14 +872,14 @@
     saving = true; userActed = true;
     sSet(KEY, { answer: ans, name: firstName, pending: true });
     markChosen(ans);
-    $('bYes').disabled = true; $('bNo').disabled = true;
+    setBtns(true);
     spinStatus('Shranjujem …');
     if (!apiReady) { finishFail('Povezava še ni nastavljena. Piši Stepanu.'); return; }
     var slow = setTimeout(function () { if (saving) spinStatus('Še trenutek …'); }, 6000);
     call({ a: 'set', t: token, v: ans }, 12000, 30000, 5).then(function (j) {
       clearTimeout(slow);
       saving = false;
-      $('bYes').disabled = false; $('bNo').disabled = false;
+      setBtns(false);
       if (j.ok === false && j.error === 'token') { applyServer(j); return; }
       if (j.ok === false) { finishFail(); return; }
       if ('name' in j) setName(j.name);
@@ -870,7 +891,7 @@
   }
   function finishFail(msg) {
     saving = false;
-    $('bYes').disabled = false; $('bNo').disabled = false;
+    setBtns(false);
     show('ask');
     status(msg || 'Shranjevanje ni uspelo. Preveri povezavo z internetom in tapni še enkrat.', true);
   }
@@ -878,6 +899,8 @@
   // events
   $('bYes').addEventListener('click', function () { save('yes'); });
   $('bNo').addEventListener('click', function () { save('no'); });
+  $('bYes2').addEventListener('click', function () { save('yes'); });
+  $('bNo2').addEventListener('click', function () { save('no'); });
   Array.prototype.forEach.call(document.querySelectorAll('[data-change]'), function (b) {
     b.addEventListener('click', function () {
       userActed = true; status(''); show('ask');
