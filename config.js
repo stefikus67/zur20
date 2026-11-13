@@ -29,7 +29,7 @@ window.RSVP_CONFIG = {
 
   // Donations (page sorts them into a leaderboard by amount). Real ones from Revolut 12. 11. (70,28 EUR) + the joke base. Max 12 shown.
   donations: [
-    { who: 'Anna K.', amount: 5, note: '' },
+    { who: 'Ana K.', amount: 5, note: '' },
     { who: 'Lovro T.', amount: 0.69, note: '' },
     { who: 'Urban K.', amount: 3.67, note: 'Rabm met še za svoj porsche.' },
     { who: 'Tanya S.', amount: 5, note: '' },
