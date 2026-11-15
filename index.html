@@ -298,11 +298,11 @@
   </div>
 
   <div class="pad">
-    <p class="invite" id="banner"><b id="greet">Hej!</b> <span id="lead">Vabim te na svoj 20. rojstni dan.</span></p>
+    <p class="invite" id="banner"><b id="greet">Hej!</b> <span id="lead">Vabim te na žur za svoj 20. rojstni dan.</span></p>
 
     <!-- Ask, in the page itself: Instagram's iPhone browser can hide the fixed bottom bar -->
     <div class="askinline" id="askInline" hidden>
-      <p class="q"><b>Prideš?</b> Odgovori do nedelje, 15. 11.</p>
+      <p class="q"><b>Prideš?</b> <span id="qText2">Odgovori do srede, 18. 11.</span></p>
       <div class="btns">
         <button type="button" class="primary" data-v="yes" id="bYes2">Pridem</button>
         <button type="button" data-v="no" id="bNo2">Ne morem</button>
@@ -424,7 +424,7 @@
 <!-- Ask: sticky bar -->
 <section id="ask">
   <div class="in">
-    <p class="q" id="qLine"><b>Prideš?</b> <span id="qText">Odgovori do nedelje, 15. 11.</span></p>
+    <p class="q" id="qLine"><b>Prideš?</b> <span id="qText">Odgovori do srede, 18. 11.</span></p>
     <div class="btns">
       <button type="button" class="primary" data-v="yes" id="bYes">Pridem</button>
       <button type="button" data-v="no" id="bNo">Ne morem</button>
@@ -629,10 +629,10 @@
     var START = Date.UTC(2026, 10, 20, 20, 0, 0), END = Date.UTC(2026, 10, 21, 0, 0, 0);
     partyOver = Date.now() >= END;
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-    var DEADLINE = Date.UTC(2026, 10, 15, 23, 0, 0);   // Mon 16. 11. 00.00 Ljubljana = deadline Sun 15. 11. 23.59 passed
+    var DEADLINE = Date.UTC(2026, 10, 18, 23, 0, 0);   // Thu 19. 11. 00.00 Ljubljana (CET) = deadline Wed 18. 11. 23.59 passed
     function tick() {
       var now = Date.now(), ms = START - now;
-      if (now >= DEADLINE) $('qText').textContent = now >= START ? 'Žur že poteka.' : '';
+      if (now >= DEADLINE) $('qText').textContent = $('qText2').textContent = now >= START ? 'Žur že poteka.' : '';
       if (ms <= 0) {
         $('cd').hidden = true;
         $('cdTitle').textContent = 'Žur';
