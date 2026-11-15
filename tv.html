@@ -62,7 +62,7 @@
 
   /* layout: main (bar) + side (top 5). Main fades/resizes when the leaderboard turns on. */
   .main { position: absolute; left: 0; top: 0; bottom: 0; width: 1920px; z-index: 2; transition: opacity .45s ease; }
-  .side { position: absolute; top: 0; bottom: 0; right: 0; width: 576px; z-index: 2; padding: 150px 64px 120px 24px;
+  .side { position: absolute; top: 0; bottom: 0; right: 0; width: 576px; z-index: 2; padding: 128px 56px 100px 16px;
     transform: translateX(100%); opacity: 0; transition: transform .9s var(--ease), opacity .6s ease; }
   .stage.lb .main { width: 1344px; }
   .stage.lb .side { transform: none; opacity: 1; }
@@ -106,8 +106,8 @@
   /* footer */
   .foot { position: absolute; left: 80px; right: 80px; bottom: 44px; display: flex; justify-content: space-between; align-items: baseline; gap: 40px; z-index: 3; }
   .note { font-size: 40px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .upd { font-size: 32px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .upd.off::after { content: " · brez povezave"; color: var(--red-hot); }
+  .upd { font-size: 40px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .upd.off::after { content: " · brez povezave"; color: var(--red-hot); font-weight: 700; }
 
   /* leaderboard layout: tighter main column */
   .stage.lb .mark { left: 40px; top: 190px; width: 470px; height: 440px; }
@@ -122,21 +122,21 @@
   .stage.lb .pct { font-size: 56px; }
 
   /* top 5 */
-  .panel { height: 100%; border-radius: 28px; border: 2px solid var(--line); padding: 40px 40px 30px;
+  .panel { height: 100%; border-radius: 28px; border: 2px solid var(--line); padding: 36px 30px 16px;
     background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015)); display: flex; flex-direction: column; }
-  .panel h2 { margin: 0 0 22px; font-family: var(--spray); font-weight: 400; font-size: 92px; line-height: 1; color: #fff; transform: rotate(-3deg); transform-origin: left;
+  .panel h2 { margin: 0 0 4px; font-family: var(--spray); font-weight: 400; font-size: 76px; line-height: 1; color: #fff; transform: rotate(-3deg); transform-origin: left;
     text-shadow: 0 0 8px rgba(255,255,255,.45), 3px 4px 0 rgba(0,0,0,.55); }
-  .tops { list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; }
-  .tops li { display: grid; grid-template-columns: 76px 1fr; column-gap: 24px; align-items: center; padding: 16px 0; border-top: 2px solid var(--line);
+  .tops { list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .tops li { display: grid; grid-template-columns: 68px 1fr; column-gap: 20px; align-items: center; padding: 8px 0; border-top: 2px solid var(--line);
     animation: rowin .8s var(--ease) both; }
   .tops li:first-child { border-top: 0; }
   @keyframes rowin { from { opacity: 0; transform: translateX(40px); } }
-  .rk { width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-weight: 800; font-size: 36px;
+  .rk { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-weight: 800; font-size: 36px;
     background: #16161a; color: var(--ink); box-shadow: inset 0 0 0 3px var(--red); }
   .rk.r1 { background: var(--red); color: #fff; box-shadow: 0 0 26px rgba(var(--red-glow), .8); }
   .rk.r2, .rk.r3 { background: #2a0a0e; }
-  .nm { font-size: 44px; font-weight: 700; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .am { font-family: var(--disp); font-size: 38px; font-weight: 700; color: var(--red-hot); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nm { font-size: 52px; font-weight: 700; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .am { font-family: var(--disp); font-size: 46px; font-weight: 700; color: var(--red-hot); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .empty { font-size: 40px; color: var(--muted); margin: 10px 0 0; }
 
   .hint { position: absolute; left: 50%; top: 128px; transform: translateX(-50%); z-index: 6; font-size: 30px; color: var(--ink);
@@ -216,8 +216,8 @@
   }
   function pctText(p) {
     if (p >= 100) return '100 %';
-    var d = p < 1 ? 2 : 1;
-    return p.toFixed(d).replace('.', ',') + ' %';
+    if (p >= 99.95) return '99,9 %';   // never "100 %" while something is still missing
+    return p.toFixed(p < 1 ? 2 : 1).replace('.', ',') + ' %';
   }
   function hhmm(d) {
     try {
@@ -242,17 +242,19 @@
 
   // ---------- animated numbers ----------
   var shown = { g: 0, goal: 287430 };
-  var anim = null;
+  var anim = null, backup = null, onScreen = 0;
   function render(g, goal) {
+    onScreen = g;
     $('amt').textContent = eur(g);
     $('left').textContent = g >= goal ? 'Cilj dosežen. Res?' : 'Manjka ' + eur(goal - g);
     var p = Math.min(100, g / goal * 100);
     $('pct').textContent = pctText(p);
   }
   function tweenTo(g, goal) {
-    var from = shown.g, start = null, dur = 2600;
+    var from = onScreen, start = null, dur = 2600;
     shown.goal = goal;
-    if (anim) cancelAnimationFrame(anim);
+    if (anim) { cancelAnimationFrame(anim); anim = null; }
+    clearTimeout(backup);
     var calm = false; try { calm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
     if (calm || document.hidden || !window.requestAnimationFrame || from === g) {
       shown.g = g; render(g, goal); fitAll(); return;
@@ -267,7 +269,7 @@
     shown.g = g;
     render(Math.max(from, g), goal); fitAll();   // fit for the widest value first, so the line never jumps out of its box
     anim = requestAnimationFrame(step);
-    setTimeout(function () { if (anim) { cancelAnimationFrame(anim); anim = null; } render(g, goal); fitAll(); }, dur + 600);
+    backup = setTimeout(function () { if (anim) { cancelAnimationFrame(anim); anim = null; } render(g, goal); fitAll(); }, dur + 600);
   }
 
   // ---------- top 5 ----------
@@ -316,7 +318,8 @@
   // ---------- data ----------
   var pageRev = null, lastUpdated = null;
   function apply(j) {
-    var g = Number(j.gathered), goal = Number(j.goal);
+    if (!j || typeof j.gathered !== 'number') throw new Error('bad gathered');
+    var g = j.gathered, goal = Number(j.goal);
     if (!isFinite(g) || g < 0) throw new Error('bad gathered');
     if (!isFinite(goal) || goal <= 0) goal = shown.goal || 287430;
     g = Math.min(g, 999999999999); goal = Math.min(goal, 999999999999);
@@ -337,8 +340,8 @@
     setLayout(j.leaderboard_on === true);
 
     var d = j.updated_at ? new Date(j.updated_at) : null;
-    lastUpdated = (d && !isNaN(d.getTime())) ? d : new Date();
-    $('upd').textContent = 'posodobljeno ' + hhmm(lastUpdated);
+    if (d && !isNaN(d.getTime())) lastUpdated = d;   // bad or missing time: keep the last good one, never the laptop clock
+    $('upd').textContent = 'posodobljeno ' + (lastUpdated ? hhmm(lastUpdated) : '–');
   }
 
   function load() {
@@ -367,7 +370,6 @@
     var el = document.documentElement;
     try {
       if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(function () {});
-      else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
     } catch (e) {}
   });
   var idleT = null;
