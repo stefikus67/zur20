@@ -1,15 +1,30 @@
 {
-  "gathered": 138.06,
+  "gathered": 163.06,
   "goal": 287430,
   "car": "Porsche 911 GT3 RS",
-  "updated_at": "2026-11-15T23:00:00+01:00",
+  "updated_at": "2026-11-16T21:05:00+01:00",
   "leaderboard_on": false,
   "top5": [
-    { "name": "Minej M.", "amount": 36.24 },
-    { "name": "Izak J.", "amount": 20 },
-    { "name": "Lev M.", "amount": 15 },
-    { "name": "Žan Luka P.", "amount": 10 },
-    { "name": "Julija S.", "amount": 10 }
+    {
+      "name": "Minej M.",
+      "amount": 36.24
+    },
+    {
+      "name": "Izak J.",
+      "amount": 20
+    },
+    {
+      "name": "Lev M.",
+      "amount": 15
+    },
+    {
+      "name": "Aljaž I.",
+      "amount": 15
+    },
+    {
+      "name": "Žan Luka P.",
+      "amount": 10
+    }
   ],
   "note": "",
   "page_rev": 1
