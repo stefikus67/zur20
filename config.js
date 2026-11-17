@@ -25,7 +25,7 @@ window.RSVP_CONFIG = {
   revolutUrl: 'https://revolut.me/stepan_privalov',
 
   // The joke progress bar. Bump "raised" for the "fundraiser update" DM.
-  fund: { raised: 138.06, goal: 287430, car: 'Porsche 911 GT3 RS' },
+  fund: { raised: 208.08, goal: 287430, car: 'Porsche 911 GT3 RS' },
 
   // Donations (page sorts them into a leaderboard by amount). Real ones from Revolut 12. 11. (70,28 EUR) + the joke base. Max 12 shown.
   donations: [
@@ -45,6 +45,11 @@ window.RSVP_CONFIG = {
     { who: 'Nace K.', amount: 3, note: 'Porshe.' },
     { who: 'Julija S.', amount: 10, note: 'Vse najboljše!!!' },
     { who: 'Anonimno', amount: 3, note: 'Za ventilčke.' },
+    { who: 'Aljaž I.', amount: 15, note: '' },
+    { who: 'Jerneja Š.', amount: 10, note: '' },
+    { who: 'Nejc K.', amount: 10.02, note: '' },
+    { who: 'Ema R.', amount: 15, note: '' },
+    { who: 'Rok S.', amount: 20, note: '' },
     { who: 'Stepan', amount: 0.69, note: 'Drobiž iz žepa.' },
     { who: 'Banka', amount: 0, note: 'Kredit zavrnjen.' },
     { who: 'Mama', amount: 0, note: 'Najprej izpiti.' }
