@@ -27,5 +27,107 @@
     }
   ],
   "note": "",
-  "page_rev": 1
+  "ticker": {
+    "on": true,
+    "main": "AIN'T NO PARTY LIKE A PRIVALOV PARTY",
+    "hot": "PRIVALOV",
+    "eggs": [
+      "20 let, 0 obžalovanj",
+      "Bolje biti pijan nego star",
+      "It's Friday, I'm in luv",
+      "Free your mind",
+      "Give me everything",
+      "Na zdravje · Cheers · Ура",
+      "Selfie s slavljencem je obvezen",
+      "Plesišče je tam, kjer stojiš",
+      "Hvala, da si tu",
+      "Rojen za žur",
+      "20 je novih 18",
+      "Kar se zgodi v Tivoliju, ostane v Tivoliju",
+      "Telefon v žep, roke gor",
+      "Nihče ne gre domov",
+      "Legende pridejo pozno in ostanejo do konca",
+      "Še ena pesem, pa gremo. Ne gremo.",
+      "Danes plešemo, jutri razmišljamo",
+      "Grad Tivoli je nocoj naš",
+      "Tu se ne sedi",
+      "Ura? Nima veze.",
+      "Nocoj si VIP",
+      "Twenty and plenty",
+      "Castle on the hill",
+      "Vodka is the new voda",
+      "FIREBALL",
+      "Dance till you're dead"
+    ],
+    "egg_every_s": 45,
+    "top": {
+      "on": true,
+      "speed_px_s": 100
+    },
+    "bottom": {
+      "on": true,
+      "speed_px_s": 120
+    },
+    "symbols": [
+      "star",
+      "sickle",
+      "moon",
+      "pp",
+      "peach",
+      "smiley",
+      "bolt",
+      "disco",
+      "flag",
+      "wheel",
+      "car",
+      "badge20",
+      "crown",
+      "coupe",
+      "flame",
+      "castle",
+      "matryoshka",
+      "bear",
+      "eye",
+      "infinity",
+      "cherries",
+      "dice",
+      "lips"
+    ]
+  },
+  "layouts": {
+    "list": [
+      "hero20",
+      "show",
+      "money",
+      "slogan"
+    ],
+    "min_s": 20,
+    "max_s": 40,
+    "pin": ""
+  },
+  "visuals_on": true,
+  "visuals_every_s": 30,
+  "flip_idle_s": 25,
+  "warp": {
+    "on": true,
+    "intensity": 0.6
+  },
+  "pure_beats": {
+    "on": true,
+    "every_s": [
+      180,
+      360
+    ],
+    "duration_s": [
+      15,
+      25
+    ]
+  },
+  "beat": {
+    "on": true,
+    "source": "mic",
+    "bpm_fallback": 124,
+    "sensitivity": 0.5
+  },
+  "page_rev": 4
 }

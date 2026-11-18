@@ -4,14 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Porsche fundraiser TV</title>
+<title>Žur 20</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&family=Unbounded:wght@500;700;800&display=swap">
 <style>
   /* TV screen for the party: laptop -> HDMI -> 43" TV, read from 5 m.
      A fixed 1920x1080 stage, scaled to fit any screen (black letterbox), so sizes are real pixels on a 1080p TV.
-     Same look as the invite: carbon stage, red floor light, the red 20 with spray-painted NEED MONEY FOR PORSCHE. */
+     Same look as the invite: carbon stage, red floor light. The party is the hero: layouts rotate between two ticker bands. */
   :root {
     --black: #000;
     --line: #232328;
@@ -33,8 +34,10 @@
   .stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; margin: -540px 0 0 -960px;
     transform-origin: 50% 50%; overflow: hidden; isolation: isolate; background: #000; }
 
-  /* the room */
+  /* the room. z-index 0 makes .bg its own stacking context: nothing in it (sweep, visuals) can rise above
+     the numbers, the Top 5 or the two tickers */
   .bg, .bg > * { position: absolute; inset: 0; pointer-events: none; }
+  .bg { z-index: 0; }
   .bg .carbon { background:
       repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 2px, transparent 2px 7px),
       repeating-linear-gradient(-45deg, rgba(255,255,255,.022) 0 2px, transparent 2px 7px),
@@ -51,80 +54,114 @@
     transform: translate3d(-60%, 0, 0); animation: sweep 11s cubic-bezier(.45,.05,.35,1) 2s infinite; z-index: 5; }
   @keyframes sweep { 0% { transform: translate3d(-60%, 0, 0); } 55%, 100% { transform: translate3d(60%, 0, 0); } }
 
-  /* top bar */
-  .top { position: absolute; left: 80px; right: 80px; top: 48px; display: flex; justify-content: space-between; align-items: center; z-index: 3; }
-  .brand { display: flex; align-items: center; gap: 16px; font-family: var(--disp); font-weight: 700; font-size: 36px; letter-spacing: .02em; }
-  .brand i { width: 22px; height: 22px; border-radius: 50%; background: var(--red); box-shadow: 0 0 20px rgba(var(--red-glow), .95); display: block;
-    animation: live 2.4s ease-in-out infinite; }
-  @keyframes live { 50% { opacity: .45; } }
-  .pill { font-family: var(--disp); font-weight: 500; font-size: 30px; color: var(--ink); background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.12);
-    border-radius: 999px; padding: 10px 28px; white-space: nowrap; }
+  /* ---------- rotating layouts ----------
+     Content lives between the two ticker bands (y 84-996). One layout is shown at a time (.on), the others are
+     faded out and their animations paused. The party is the hero; the money layout is one of several. */
+  .ly { position: absolute; left: 0; right: 0; top: 84px; bottom: 84px; z-index: 2; opacity: 0; pointer-events: none;
+    transition: opacity .9s ease; }
+  .ly.on { opacity: 1; }
+  .ly:not(.on) * { animation-play-state: paused !important; }
 
-  /* layout: main (bar) + side (top 5). Main fades/resizes when the leaderboard turns on. */
-  .main { position: absolute; left: 0; top: 0; bottom: 0; width: 1920px; z-index: 2; transition: opacity .45s ease; }
-  .side { position: absolute; top: 0; bottom: 0; right: 0; width: 576px; z-index: 2; padding: 128px 56px 100px 16px;
-    transform: translateX(100%); opacity: 0; transition: transform .9s var(--ease), opacity .6s ease; }
-  .stage.lb .main { width: 1344px; }
-  .stage.lb .side { transform: none; opacity: 1; }
-  .stage.swap .main { opacity: 0; }
-
-  /* the mark: red 20 + spray paint */
-  .mark { position: absolute; left: 90px; top: 170px; width: 660px; height: 500px; display: flex; align-items: center; justify-content: center; }
-  .big20 { font-family: var(--disp); font-weight: 800; font-size: 400px; line-height: .78; letter-spacing: -.045em;
-    background: linear-gradient(180deg, #ff4357 0%, #e0001b 42%, #a80014 78%, #7a000e 100%);
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: var(--red);
-    filter: drop-shadow(0 0 50px rgba(var(--red-glow), .45)) drop-shadow(0 26px 30px rgba(0,0,0,.6)); }
+  /* A: the big 20 */
+  .h20 { position: absolute; left: 50%; top: 50%; width: 1200px; height: 760px; margin: -380px 0 0 -600px; display: flex; align-items: center; justify-content: center;
+    animation: breathe 9s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes breathe { from { transform: scale(.97); } to { transform: scale(1.03); } }
+  .big20 { font-family: var(--disp); font-weight: 800; font-size: 660px; line-height: .78; letter-spacing: -.045em; color: var(--red); white-space: nowrap; will-change: transform; }
+  .big20 .wch { background: linear-gradient(180deg, #ff4357 0%, #e0001b 42%, #a80014 78%, #7a000e 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 60px rgba(var(--red-glow), .5)) drop-shadow(0 30px 34px rgba(0,0,0,.6)); }
   .paint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-7deg); text-align: center; width: max-content;
-    font-family: var(--spray); color: #fff; font-size: 112px; line-height: .92;
+    font-family: var(--spray); color: #fff; font-size: 170px; line-height: .92;
     text-shadow: 0 0 1px #fff, 0 0 8px rgba(255,255,255,.55), 0 0 26px rgba(255,255,255,.22), 3px 5px 0 rgba(0,0,0,.55), 0 0 40px rgba(0,0,0,.6); }
   .paint span { display: block; white-space: nowrap; }
 
-  /* numbers */
-  .nums { position: absolute; left: 820px; right: 80px; top: 180px; height: 480px; display: flex; flex-direction: column; justify-content: center; }
-  .lbl { font-family: var(--disp); font-weight: 700; font-size: 40px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
-  .amt { font-family: var(--disp); font-weight: 800; font-size: 210px; line-height: 1.02; letter-spacing: -.03em; white-space: nowrap;
-    font-variant-numeric: tabular-nums; margin: 6px 0 4px; text-shadow: 0 0 40px rgba(var(--red-glow), .25); }
-  .of { font-size: 54px; color: var(--muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* D: the slogan */
+  .slg { position: absolute; left: 110px; right: 110px; top: 50%; transform: translateY(-50%); text-align: center;
+    font-family: var(--disp); font-weight: 800; font-size: 150px; line-height: 1.08; letter-spacing: .01em; color: #fff; text-wrap: balance;
+    text-shadow: 0 6px 30px rgba(0,0,0,.6); }
+  .slg .tk-shine { top: -24px; bottom: -24px; }
+  .slg .tk-shine > span { top: 24px; }
+
+  /* warp ("drunk" mode): each letter drifts like liquid, out of step with its neighbours; colour ghosts slide behind
+     the slogan; the slogan sways; ticker words wobble gently (PRIVALOV a bit more). Transform-only (compositor).
+     Strength --wi 0..1 from tv.json "warp". The money card is never warped, so the numbers stay readable. */
+  .stage { --wi: .6; }
+  .wword { display: inline-block; white-space: nowrap; }
+  .wch { display: inline-block; white-space: pre; }
+  .stage.warp .wch { animation-name: wob; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+    animation-direction: alternate; will-change: transform; }
+  @keyframes wob {
+    from { transform: translate3d(calc(var(--wi) * -3px), calc(var(--wi) * -9px), 0) rotate(calc(var(--wi) * -3deg)); }
+    to { transform: translate3d(calc(var(--wi) * 3px), calc(var(--wi) * 9px), 0) rotate(calc(var(--wi) * 3deg)) scale(calc(1 + var(--wi) * .05)); } }
+  .stage.warp .tk-txt .wch { animation-name: twob; }
+  .stage.warp .tk-txt .wch.twh { animation-name: twobh; }
+  @keyframes twob { from { transform: translate3d(0, calc(var(--wi) * -3px), 0) rotate(calc(var(--wi) * -1.2deg)); }
+    to { transform: translate3d(0, calc(var(--wi) * 3px), 0) rotate(calc(var(--wi) * 1.2deg)); } }
+  @keyframes twobh { from { transform: translate3d(0, calc(var(--wi) * -5px), 0) rotate(calc(var(--wi) * -2.5deg)); }
+    to { transform: translate3d(0, calc(var(--wi) * 5px), 0) rotate(calc(var(--wi) * 2.5deg)) scale(calc(1 + var(--wi) * .07)); } }
+  .slg-main { position: relative; will-change: transform; }
+  .slg-gh { position: absolute; left: 0; right: 0; top: 0; pointer-events: none; opacity: 0; text-shadow: none; }
+  .slg-gh .wch { animation: none !important; }
+  .slg-gh .tk-hot { color: inherit; } .slg-gh .tk-glow, .slg-gh .tk-shine { display: none; }
+  .stage.warp .slg-gh { opacity: 1; animation: ghost 7s ease-in-out infinite alternate; will-change: transform; }
+  .slg-r { color: rgba(255, 30, 70, .4); }
+  .slg-c { color: rgba(0, 230, 255, .26); }
+  .stage.warp .slg-c { animation-duration: 9s; animation-direction: alternate-reverse; }
+  @keyframes ghost { from { transform: translate3d(calc(var(--wi) * -8px), calc(var(--wi) * -3px), 0); }
+    to { transform: translate3d(calc(var(--wi) * 8px), calc(var(--wi) * 4px), 0); } }
+  .stage.warp .slg { animation: sway 11s ease-in-out infinite alternate; }
+  @keyframes sway { from { transform: translateY(-50%) skewX(calc(var(--wi) * -2deg)); }
+    to { transform: translateY(-50%) skewX(calc(var(--wi) * 2deg)) scale(calc(1 + var(--wi) * .02)); } }
+
+
+  /* C: money, modest: amount card + Top 5 slide in */
+  .mpanel { position: absolute; left: 50%; top: 50%; width: 1100px; margin-left: -550px; padding: 50px 60px 46px; border-radius: 30px;
+    border: 2px solid var(--line); background: linear-gradient(180deg, rgba(24,24,28,.9), rgba(10,10,12,.9));
+    transform: translate3d(0, -46%, 0); opacity: 0; transition: transform .9s var(--ease) .15s, opacity .7s ease .15s; }
+  .ly-money.with5 .mpanel { left: 120px; margin-left: 0; width: 1040px; }
+  .ly-money.on .mpanel { transform: translate3d(0, -50%, 0); opacity: 1; }
+  .lbl { font-family: var(--disp); font-weight: 700; font-size: 30px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+  .amt { font-family: var(--disp); font-weight: 800; font-size: 150px; line-height: 1.02; letter-spacing: -.03em; white-space: nowrap;
+    font-variant-numeric: tabular-nums; margin: 10px 0 6px; }
+  .of { font-size: 36px; color: var(--muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .of b { color: var(--ink); font-weight: 700; }
-  .car { font-size: 42px; color: var(--muted); margin-top: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .car b { color: var(--ink); font-weight: 600; }
-
-  /* the bar */
-  .barbox { position: absolute; left: 80px; right: 80px; top: 730px; }
-  .bar { position: relative; height: 76px; border-radius: 99px; background: #1b1b20; box-shadow: inset 0 0 0 2px #2a2a31; }
-  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; min-width: 26px; border-radius: 99px;
+  .bar { position: relative; height: 26px; margin-top: 30px; border-radius: 99px; background: #1b1b20; box-shadow: inset 0 0 0 2px #2a2a31; }
+  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; min-width: 14px; border-radius: 99px;
     background: linear-gradient(180deg, #ff4357, #e0001b 55%, #b30016); overflow: hidden;
-    box-shadow: 0 0 26px rgba(var(--red-glow), .95), 0 0 4px #fff; transition: width 2.6s var(--ease); animation: pulse 2.2s ease-in-out infinite; }
-  .fill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45) 50%, transparent 80%);
-    transform: translateX(-100%); animation: shine 3.2s ease-in-out infinite; }
-  @keyframes shine { 60%, 100% { transform: translateX(100%); } }
-  @keyframes pulse { 50% { box-shadow: 0 0 46px rgba(var(--red-glow), 1), 0 0 4px #fff; } }
-  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 40px; margin-top: 30px; }
-  .left { font-family: var(--disp); font-weight: 800; font-size: 72px; color: var(--red-hot); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .pct { font-family: var(--disp); font-weight: 700; font-size: 64px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    box-shadow: 0 0 16px rgba(var(--red-glow), .8); transition: width 2.6s var(--ease); }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 40px; margin-top: 16px; }
+  .left, .pct { font-size: 30px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .side { position: absolute; right: 120px; top: 70px; bottom: 70px; width: 600px;
+    transform: translate3d(80px, 0, 0); opacity: 0; transition: transform .9s var(--ease) .3s, opacity .7s ease .3s; }
+  .ly-money:not(.with5) .side { display: none; }
+  .ly-money.nodata .mpanel, .ly-money.nodata .side { visibility: hidden; }   /* nothing about money until the first good tv.json */
+  .ly-money.on .side { transform: none; opacity: 1; }
 
-  /* footer */
-  .foot { position: absolute; left: 80px; right: 80px; bottom: 44px; display: flex; justify-content: space-between; align-items: baseline; gap: 40px; z-index: 3; }
-  .note { font-size: 40px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .upd { font-size: 40px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .upd.off::after { content: " · brez povezave"; color: var(--red-hot); font-weight: 700; }
+  /* small extras: optional note line, offline badge */
+  .note { position: absolute; left: 80px; bottom: 100px; max-width: 1200px; z-index: 3; font-size: 34px; font-weight: 600; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 10px rgba(0,0,0,.8); }
+  .offline { display: none; position: absolute; right: 40px; bottom: 100px; z-index: 5; font-family: var(--disp); font-weight: 700; font-size: 24px;
+    color: var(--red-hot); background: rgba(0,0,0,.8); border: 2px solid rgba(var(--red-glow), .6); border-radius: 99px; padding: 8px 22px; }
+  .offline.off { display: block; }
+  .offline.off::after { content: "brez povezave"; }
 
-  /* leaderboard layout: tighter main column */
-  .stage.lb .mark { left: 40px; top: 190px; width: 470px; height: 440px; }
-  .stage.lb .big20 { font-size: 290px; }
-  .stage.lb .paint { font-size: 78px; }
-  .stage.lb .nums { left: 540px; right: 40px; }
-  .stage.lb .amt { font-size: 170px; }
-  .stage.lb .of { font-size: 46px; }
-  .stage.lb .car { font-size: 38px; }
-  .stage.lb .barbox { left: 80px; right: 40px; }
-  .stage.lb .left { font-size: 60px; }
-  .stage.lb .pct { font-size: 56px; }
+  /* split-flap digits: each digit is a card of two halves; a flip = top flap falls (old), bottom flap drops in (new).
+     Every card is as wide as a "0", so the line never changes width while digits roll. */
+  .amt .fd { position: relative; display: inline-block; padding: 0 .022em; margin: 0 .01em; perspective: 3.5em; }
+  .amt .fd-sz { color: transparent; text-shadow: none; }
+  .amt .fd-h { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; backface-visibility: hidden; }
+  .amt .fd-h > i { position: absolute; left: 0; right: 0; height: 200%; font-style: normal; text-align: center; color: var(--ink); }
+  .amt .fd-t { top: 0; border-radius: .07em .07em 0 0; background: linear-gradient(180deg, #25252b, #1b1b20); transform-origin: 50% 100%; }
+  .amt .fd-t > i { top: 0; }
+  .amt .fd-b { top: 50%; border-radius: 0 0 .07em .07em; background: linear-gradient(180deg, #141418, #1d1d22); transform-origin: 50% 0; }
+  .amt .fd-b > i { top: -100%; }
+  .amt .fd-flap { z-index: 3; }
+  .amt .fd::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: rgba(0,0,0,.7); z-index: 4; }
 
   /* top 5 */
   .panel { height: 100%; border-radius: 28px; border: 2px solid var(--line); padding: 36px 30px 16px;
-    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015)); display: flex; flex-direction: column; }
-  .panel h2 { margin: 0 0 4px; font-family: var(--spray); font-weight: 400; font-size: 76px; line-height: 1; color: #fff; transform: rotate(-3deg); transform-origin: left;
+    background: linear-gradient(180deg, rgba(26,26,30,.93), rgba(12,12,14,.93)); display: flex; flex-direction: column; }   /* nearly opaque: background scenes never run through the names */
+  .panel h2 { margin: 0 0 4px; font-family: var(--spray); font-weight: 400; font-size: 66px; line-height: 1; color: #fff; transform: rotate(-3deg); transform-origin: left;
     text-shadow: 0 0 8px rgba(255,255,255,.45), 3px 4px 0 rgba(0,0,0,.55); }
   .tops { list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
   .tops li { display: grid; grid-template-columns: 68px 1fr; column-gap: 20px; align-items: center; padding: 8px 0; border-top: 2px solid var(--line);
@@ -135,58 +172,230 @@
     background: #16161a; color: var(--ink); box-shadow: inset 0 0 0 3px var(--red); }
   .rk.r1 { background: var(--red); color: #fff; box-shadow: 0 0 26px rgba(var(--red-glow), .8); }
   .rk.r2, .rk.r3 { background: #2a0a0e; }
-  .nm { font-size: 52px; font-weight: 700; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .am { font-family: var(--disp); font-size: 46px; font-weight: 700; color: var(--red-hot); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nm { font-size: 46px; font-weight: 700; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .am { font-family: var(--disp); font-size: 40px; font-weight: 700; color: var(--red-hot); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .empty { font-size: 40px; color: var(--muted); margin: 10px 0 0; }
 
-  .hint { position: absolute; left: 50%; top: 128px; transform: translateX(-50%); z-index: 6; font-size: 30px; color: var(--ink);
+  /* metro tickers: a slim band at the very top (runs left to right) and one at the very bottom (right to left).
+     Thin red line on the inner edge. Each segment is its own composited layer, moved with translate3d by one
+     requestAnimationFrame loop for both bands. */
+  .ticker { position: absolute; left: 0; right: 0; height: 84px; z-index: 4; overflow: hidden;
+    background: #000; transition: opacity .6s ease, transform 1.5s cubic-bezier(.65,0,.35,1); }
+  /* pure-beats moment: both bands slide out, the layouts fade, the background scene has the whole screen */
+  .stage.pure .tk-top { transform: translate3d(0, -150%, 0); }
+  .stage.pure .tk-bot { transform: translate3d(0, 150%, 0); }
+  .stage.pure .ly, .stage.pure .note, .stage.pure .hint { opacity: 0 !important; }
+  /* beat pulse: a glow line on the inner edge of each band, faded in on the beat (opacity only) */
+  .tk-edge { position: absolute; left: 0; right: 0; height: 3px; z-index: 3; opacity: 0; pointer-events: none;
+    background: #ff3a4c; box-shadow: 0 0 14px 3px rgba(255,40,60,.9); will-change: opacity; }
+  .tk-bot .tk-edge { top: 0; } .tk-top .tk-edge { bottom: 0; }
+  .v-beat { opacity: 0; will-change: opacity; background: radial-gradient(55% 35% at 50% 100%, rgba(var(--red-glow), .45), transparent 70%); }
+  .beatdbg { position: absolute; left: 16px; bottom: 92px; z-index: 7; font: 600 18px/1.2 var(--ui); color: #9a9aa2;
+    background: rgba(0,0,0,.6); padding: 4px 10px; border-radius: 8px; }
+  .ticker.tk-bot { bottom: 0; border-top: 2px solid var(--red); box-shadow: 0 -6px 24px rgba(var(--red-glow), .25); }
+  .ticker.tk-top { top: 0; border-bottom: 2px solid var(--red); box-shadow: 0 6px 24px rgba(var(--red-glow), .25); }
+  .ticker.off { opacity: 0; }
+  .ticker::before, .ticker::after { content: ""; position: absolute; top: 0; bottom: 0; width: 140px; z-index: 2; pointer-events: none; }
+  .ticker::before { left: 0; background: linear-gradient(90deg, #000, rgba(0,0,0,0)); }
+  .ticker::after { right: 0; background: linear-gradient(270deg, #000, rgba(0,0,0,0)); }
+  .tk-seg { position: absolute; left: 0; top: 0; height: 82px; display: flex; align-items: center; white-space: nowrap;
+    will-change: transform; backface-visibility: hidden; }
+  .tk-txt { font-family: var(--disp); font-weight: 700; font-size: 46px; letter-spacing: .04em; color: #fff; line-height: 1; }
+  /* PRIVALOV: red, with a soft glow pulse and a light sweep. Both run on opacity/transform only (compositor, no repaint):
+     the sweep is a narrow window moving right while the white copy inside it moves left by the same amount. */
+  .tk-hot { position: relative; display: inline-block; color: var(--red-hot); }
+  .tk-glow { position: absolute; left: 0; top: 0; color: var(--red-hot); pointer-events: none; opacity: 0;
+    text-shadow: 0 0 14px rgba(255,58,76,.95), 0 0 34px rgba(var(--red-glow), .8); animation: tkglow 2.8s ease-in-out infinite; will-change: opacity; }
+  @keyframes tkglow { 50% { opacity: 1; } }
+  .tk-shine { position: absolute; left: 0; top: -12px; bottom: -12px; width: 30%; overflow: hidden; pointer-events: none;
+    animation: tkwin 4.2s cubic-bezier(.45,.05,.35,1) infinite; will-change: transform; }
+  .tk-shine > span { position: absolute; left: 0; top: 12px; color: #ffe3e6; text-shadow: 0 0 10px rgba(255,255,255,.8);
+    animation: tkwtx 4.2s cubic-bezier(.45,.05,.35,1) infinite; will-change: transform; }
+  /* window = 30 % of the word; it rests well outside the word at both ends so no glow edge shows while parked */
+  @keyframes tkwin { 0% { transform: translateX(-133.33%); } 45%, 100% { transform: translateX(400%); } }
+  @keyframes tkwtx { 0% { transform: translateX(40%); } 45%, 100% { transform: translateX(-120%); } }
+  .tk-seg.egg .tk-txt, .tk-static.egg .tk-txt { font-style: italic; letter-spacing: .02em; color: var(--red-hot);
+    text-shadow: 0 0 16px rgba(var(--red-glow), .5); }
+  /* separators: mostly a star, now and then one of the other symbols; red or white (smiley, peach and lips keep their own colours) */
+  .tk-sep { width: 36px; height: 36px; margin: 0 52px; flex: none; display: block; color: var(--red); }
+  .tk-sep.w { color: #fff; }
+  .tk-sep svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .tk-sep.r svg { filter: drop-shadow(0 0 6px rgba(var(--red-glow), .9)); }
+  .tk-sep.w svg { filter: drop-shadow(0 0 5px rgba(255,255,255,.55)); }
+  .tk-static { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 160px; }
+  .tk-static .tk-txt { overflow: hidden; text-overflow: ellipsis; }
+
+  /* hidden: makes the browser load the š/ž/č and Cyrillic font files at start, so eggs never re-measure mid-scroll */
+  .fontwarm { position: absolute; left: -9999px; top: 0; font-family: var(--disp); font-weight: 700; font-size: 20px; white-space: nowrap; }
+  .fontwarm i { font-style: italic; }
+
+  /* ---------- background visuals ----------
+     All inside .bg (z-index 0), under every number, the Top 5 and both tickers. Only transform and opacity animate
+     (compositor work, no repaint). No strobing: the only blink is one headlight flicker (about 1.5 per second, small area). */
+  .vis { transition: opacity 1.2s ease; }
+  .vis.off { opacity: 0; }
+  .vis i, .vis b, .vis svg, .vis .sc, .vis .p-car, .vis .t-fan { position: absolute; display: block; pointer-events: none; }
+  .v-fog { inset: -25%; background:
+      radial-gradient(28% 22% at 30% 62%, rgba(200,200,215,.06), transparent 70%),
+      radial-gradient(35% 25% at 72% 70%, rgba(var(--red-glow), .09), transparent 70%),
+      radial-gradient(40% 18% at 50% 85%, rgba(160,160,175,.045), transparent 70%);
+    animation: vfog 38s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes vfog { from { transform: translate3d(-5%, 1%, 0) scale(1); } to { transform: translate3d(6%, -2%, 0) scale(1.08); } }
+  .v-grain { inset: -160px; opacity: .07; background-size: 240px 240px; will-change: transform; animation: vgrain 1s steps(5) infinite;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.45'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  @keyframes vgrain { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-120px, 95px, 0); } }
+
+  .vis .sc { inset: 0; animation: scin 1.6s ease both; transition: opacity 2s ease; }
+  .vis .sc.out { opacity: 0; }
+  @keyframes scin { from { opacity: 0; } }
+
+  /* scene 1: a car far away in the fog switches its headlights on; beams spill toward us */
+  .sc-lights .l-glow { inset: 0; background: radial-gradient(40% 26% at 50% 66%, rgba(var(--red-glow), .22), transparent 70%); }
+  .sc-lights .l-lamp { width: 280px; height: 280px; top: 522px; opacity: 0;
+    background: radial-gradient(circle, rgba(255,255,255,.95) 0 5%, rgba(255,244,232,.42) 13%, rgba(255,228,215,.1) 34%, transparent 62%);
+    animation: lon 4s linear 1s forwards; }
+  .sc-lights .l-a { left: 730px; } .sc-lights .l-b { left: 910px; }
+  @keyframes lon { 0%, 10% { opacity: 0; } 14% { opacity: .7; } 18% { opacity: .12; } 28%, 100% { opacity: 1; } }
+  .sc-lights .l-streak { left: 0; right: 0; top: 650px; height: 24px; opacity: 0; animation: lon 4s linear 1s forwards;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255,236,226,.55), rgba(255,200,190,.12) 40%, transparent 75%); }
+  .sc-lights .l-beam { top: 662px; width: 1100px; height: 420px; opacity: 0; transform-origin: 50% 0;
+    clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+    background: linear-gradient(180deg, rgba(255,240,230,.17), rgba(255,240,230,.05) 55%, transparent 90%);
+    animation: lon 4s linear 1.1s forwards, lsway 7s ease-in-out 1s infinite alternate; }
+  .sc-lights .l-ba { left: 320px; } .sc-lights .l-bb { left: 500px; animation-delay: 1.1s, 2.4s; }
+  @keyframes lsway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+  .sc-lights .l-fog { inset: -10% -40%; will-change: transform; animation: lfog 16s linear both;
+    background: radial-gradient(18% 14% at 30% 62%, rgba(170,170,185,.10), transparent 70%), radial-gradient(22% 12% at 62% 64%, rgba(170,170,185,.08), transparent 70%); }
+  @keyframes lfog { from { transform: translate3d(-18%, 0, 0); } to { transform: translate3d(18%, 0, 0); } }
+
+  /* scene 2: a GT3 RS speed shadow streaks across in under a second and leaves a fading red line.
+     assets/gt3rs-silhouette.png is hand-traced from "Black Porsche 992 GT3 RS in Los Gatos" by Daniel Lu,
+     https://commons.wikimedia.org/wiki/File:Black_Porsche_992_GT3_RS_in_Los_Gatos_dllu.jpg, CC BY-SA 4.0;
+     the silhouette is shared under the same licence. 1800x564 px (94 % of the stage incl. the smear, car body 86 %):
+     crisp roofline / windscreen / wing with a red rim, lower body and rear dissolving into horizontal smear; car body
+     starts at x 140, tail light (247,240), headlight (1649,275). Never stretched; fully on screen mid-pass.
+     One fast-moving shape, no screen-wide flash. */
+  .sc-pass.rev { transform: scaleX(-1); }
+  .sc-pass .p-floor { inset: 0; opacity: 0; animation: pflr 2.4s ease-out .6s both;
+    background: radial-gradient(60% 14% at 50% 86%, rgba(var(--red-glow), .26), transparent 72%); }
+  @keyframes pflr { 25% { opacity: .55; } 100% { opacity: 0; } }
+  .sc-pass .p-car { left: 0; top: 360px; width: 1800px; height: 564px; opacity: 0; will-change: transform, opacity;
+    animation: ppass .9s cubic-bezier(.25,0,.75,1) .6s both; }
+  @keyframes ppass {
+    0% { transform: translate3d(-1850px, 0, 0); opacity: 0; }
+    15% { opacity: .8; }
+    75% { opacity: .8; }
+    100% { transform: translate3d(1970px, 0, 0); opacity: 0; } }
+  .sc-pass .p-img { position: absolute; left: 0; top: 0; width: 1800px; height: 564px; display: block; }
+  .sc-pass .p-ln { position: absolute; height: 3px; border-radius: 3px; }
+  .sc-pass .p-ln.l1 { left: -900px; width: 1600px; top: 28px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.16)); }
+  .sc-pass .p-ln.l2 { left: -1200px; width: 1880px; top: 113px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1)); }
+  .sc-pass .p-ln.l3 { left: -1400px; width: 1660px; top: 236px; height: 8px; background: linear-gradient(90deg, transparent, rgba(255,40,60,.35) 55%, rgba(255,60,80,.9));
+    box-shadow: 0 0 14px rgba(var(--red-glow), .5); }
+  .sc-pass .p-ln.l4 { left: -1000px; width: 1320px; top: 193px; background: linear-gradient(90deg, transparent, rgba(255,40,60,.4)); }
+  .sc-pass .p-beam { left: 1649px; top: 150px; width: 900px; height: 250px; opacity: .55; clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 55%);
+    background: linear-gradient(90deg, rgba(255,246,236,.32), rgba(255,246,236,.05) 70%, transparent); }
+  /* the red line the car leaves behind: draws across with the car, then fades */
+  .sc-pass .p-streak { left: 0; width: 1920px; top: 598px; height: 4px; opacity: 0; transform-origin: 0 50%;
+    background: linear-gradient(90deg, rgba(255,40,60,0), rgba(255,40,60,.75) 25%, rgba(255,70,90,.9) 80%, rgba(255,70,90,.2));
+    box-shadow: 0 0 18px rgba(var(--red-glow), .55); will-change: transform, opacity; animation: pstreak 2.6s ease-out .62s both; }
+  @keyframes pstreak { 0% { transform: scaleX(0); opacity: .9; } 32% { transform: scaleX(1); opacity: .9; } 100% { transform: scaleX(1); opacity: 0; } }
+
+  /* scene 3: dark warehouse, slow searchlights from the roof */
+  .sc-wh .w-struct { inset: 0;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 210px, rgba(255,255,255,.035) 210px 238px, transparent 238px 420px),
+      repeating-linear-gradient(58deg, rgba(255,255,255,.03) 0 2px, transparent 2px 86px) 0 84px / 100% 240px no-repeat,
+      repeating-linear-gradient(-58deg, rgba(255,255,255,.03) 0 2px, transparent 2px 86px) 0 84px / 100% 240px no-repeat; }
+  .sc-wh .w-beam { top: 84px; width: 760px; height: 1150px; transform-origin: 50% 0; will-change: transform;
+    clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.04) 55%, transparent 92%);
+    animation: wsw 10s ease-in-out infinite alternate; }
+  .sc-wh .w-1 { left: -80px; }
+  .sc-wh .w-2 { left: 580px; animation-duration: 13s; animation-direction: alternate-reverse;
+    background: linear-gradient(180deg, rgba(255,40,60,.2), rgba(255,40,60,.05) 55%, transparent 92%); }
+  .sc-wh .w-3 { left: 1240px; animation-duration: 11s; animation-delay: -4s; }
+  @keyframes wsw { from { transform: rotate(-26deg); } to { transform: rotate(26deg); } }
+  .sc-wh .w-haze { inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(var(--red-glow), .12)); }
+
+  /* scene 4: red laser fan from a vanishing point + light rings rushing toward us */
+  .sc-tun .t-fan { left: 960px; top: 640px; width: 0; height: 0; will-change: transform; animation: tspin 50s linear infinite; }
+  .sc-tun .t-fan i { left: 0; top: -1px; width: 1500px; height: 2px; transform-origin: 0 50%;
+    background: linear-gradient(90deg, transparent 4%, rgba(255,50,70,.5) 30%, rgba(255,50,70,.12) 75%, transparent); }
+  @keyframes tspin { to { transform: rotate(360deg); } }
+  .sc-tun .t-ring { left: 160px; top: 190px; width: 1600px; height: 900px; border: 3px solid rgba(255,58,76,.45); border-radius: 48px;
+    opacity: 0; will-change: transform, opacity; animation: tring 6s linear infinite; }
+  @keyframes tring { 0% { transform: scale(.04); opacity: 0; } 25% { opacity: .9; } 100% { transform: scale(1.7); opacity: 0; } }
+
+  /* scenes 5-7: chrome roses (style borrowed from the Free Your Mind video: liquid silver on black, one red flare).
+     Rose and petal sprites are drawn once; the scenes only move them. The vortex is a half-resolution canvas. */
+  .vis canvas.sc-cv { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: block; }
+  .vis img.cr-big, .vis img.cr-drift { position: absolute; display: block; pointer-events: none; }
+  .sc-chrome .cr-glow { inset: 0; background: radial-gradient(28% 40% at 50% 50%, rgba(255,255,255,.10), rgba(255,255,255,.02) 60%, transparent 75%); }
+  .sc-chrome .cr-pulse { position: absolute; will-change: transform; left: 50%; top: 50%; width: 760px; height: 760px; margin: -380px 0 0 -380px; }
+  .sc-chrome .cr-in { position: absolute; left: 0; top: 0; width: 760px; height: 760px; animation: crin 4s cubic-bezier(.2,.8,.2,1) both; }
+  .sc-chrome .cr-big { left: 0; top: 0; width: 760px; height: 760px; will-change: transform; animation: crspin 40s linear infinite; }
+  @keyframes crspin { to { transform: rotate(360deg); } }
+  @keyframes crin { from { transform: scale(.55); opacity: 0; } }
+  .vis .cr-flare { left: -10%; right: -10%; top: 50%; height: 6px; margin-top: -3px; opacity: 0;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255,60,70,.95), rgba(255,0,30,.35) 35%, transparent 70%);
+    box-shadow: 0 0 40px 10px rgba(var(--red-glow), .35); animation: flare 9s ease-in-out 3s both; }
+  .vis .cr-flare.f2 { top: 30%; animation-delay: 8s; }
+  @keyframes flare { 0% { opacity: 0; transform: scaleX(.3); } 30% { opacity: .9; transform: scaleX(1); } 70% { opacity: .5; } 100% { opacity: 0; transform: scaleX(1.2); } }
+  .sc-drift .cr-drift { left: 0; top: 0; opacity: .85; will-change: transform; }
+
+  /* projector view and lite mode */
+  .stage.vmode .ly, .stage.vmode .note, .stage.vmode .offline, .stage.vmode .ticker, .stage.vmode .hint { display: none !important; }
+  .stage.lite .v-grain, .stage.lite .sweep { display: none; }
+
+  .hint { position: absolute; left: 50%; top: 108px; transform: translateX(-50%); z-index: 6; font-size: 30px; color: var(--ink);
     background: rgba(0,0,0,.75); border: 2px solid var(--line); border-radius: 999px; padding: 14px 34px; transition: opacity .6s; white-space: nowrap; }
   .hint.gone { opacity: 0; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) {
-    .bg .floor, .bg .haze, .bg .sweep, .brand i, .fill, .fill::after, .tops li { animation: none !important; }
+    .bg .floor, .bg .haze, .bg .sweep, .fill, .tops li, .tk-glow, .tk-shine, .tk-shine > span, .h20 { animation: none !important; }
+    .tk-shine, .vis, .slg-gh { display: none; }
+    .wch, .slg { animation: none !important; }
   }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <div class="bg" aria-hidden="true"><div class="carbon"></div><div class="spot"></div><div class="haze"></div><div class="floor"></div><div class="sweep"></div></div>
+  <div class="bg" aria-hidden="true"><div class="carbon"></div><div class="spot"></div><div class="haze"></div><div class="floor"></div>
+    <div class="vis" id="vis"><i class="v-fog"></i><i class="v-beat" id="vbeat"></i><i class="v-grain"></i></div><div class="sweep"></div></div>
 
-  <header class="top">
-    <div class="brand"><i aria-hidden="true"></i>Fundraiser</div>
-    <span class="pill">Pomagaj Stepanu do Porscheja</span>
-  </header>
-
-  <div class="main" id="main">
-    <div class="mark" aria-hidden="true">
-      <div class="big20">20</div>
-      <div class="paint"><span>NEED MONEY</span><span>FOR PORSCHE</span></div>
-    </div>
-
-    <div class="nums">
-      <div class="lbl">Zbrano</div>
+  <!-- A: the big 20 -->
+  <section class="ly ly-hero20" data-k="hero20" aria-hidden="true">
+    <div class="h20"><div class="big20" id="big20">20</div><div class="paint" id="paint"><span>PRIVALOV</span><span>PARTY</span></div></div>
+  </section>
+  <!-- B: the background scene takes the stage, only the tickers on top -->
+  <section class="ly ly-show" data-k="show" aria-hidden="true"></section>
+  <!-- C: money, modest: amount + Top 5 -->
+  <section class="ly ly-money nodata" data-k="money" id="lyMoney">
+    <div class="mpanel">
+      <div class="lbl">Zbrano za Porsche</div>
       <div class="amt" id="amt">0 €</div>
-      <div class="of">od <b id="goal">287.430 €</b></div>
-      <div class="car">Cilj: <b id="car">Porsche 911 GT3 RS</b></div>
-    </div>
-
-    <div class="barbox">
+      <div class="of">od <b id="goal">287.430 €</b> · <span id="car">Porsche 911 GT3 RS</span></div>
       <div class="bar" role="progressbar" aria-label="Zbrano" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barWrap"><div class="fill" id="fill"></div></div>
-      <div class="row"><span class="left" id="left">Manjka 287.430 €</span><span class="pct" id="pct">0 %</span></div>
+      <div class="row"><span class="left" id="left">še manjka 287.430 €</span><span class="pct" id="pct">0 %</span></div>
     </div>
-  </div>
+    <aside class="side" id="side" aria-label="Top 5 donatorjev">
+      <div class="panel">
+        <h2>Top 5</h2>
+        <ol class="tops" id="tops"></ol>
+      </div>
+    </aside>
+  </section>
+  <!-- D: the slogan -->
+  <section class="ly ly-slogan" data-k="slogan" aria-hidden="true"><div class="slg" id="slogan"></div></section>
 
-  <aside class="side" id="side" aria-label="Top 5 donatorjev">
-    <div class="panel">
-      <h2>Top 5</h2>
-      <ol class="tops" id="tops"></ol>
-    </div>
-  </aside>
+  <div class="note" id="note"></div>
+  <div class="offline" id="upd"></div>
 
-  <footer class="foot">
-    <span class="note" id="note"></span>
-    <span class="upd" id="upd">posodobljeno –</span>
-  </footer>
+  <div class="ticker tk-top" id="tickerTop" aria-hidden="true"><i class="tk-edge"></i></div>
+  <div class="ticker tk-bot" id="ticker" aria-hidden="true"><i class="tk-edge"></i></div>
+  <div class="beatdbg" id="beatdbg" hidden></div>
+  <div class="fontwarm" aria-hidden="true">AŠšŽžČčĆćĐđ Ура 0123456789 <i>AŠšŽžČčĆćĐđ Ура</i></div>
 
   <div class="hint" id="hint">Klik ali F11 = cel zaslon</div>
 </div>
@@ -197,6 +406,12 @@
   var REFRESH_MS = 60000;
   var $ = function (id) { return document.getElementById(id); };
   var stage = $('stage');
+  // ?mode=visuals = projector view: only the background scenes, fixed-tempo pulse, no text, tickers or mic.
+  // ?lite=1 = weak browsers (e.g. a cheap Android projector): no grain, sweep or warp, fewer particles.
+  var MODE_VIS = false, LITE = false;
+  try { var qm = new URLSearchParams(location.search); MODE_VIS = qm.get('mode') === 'visuals'; LITE = qm.get('lite') === '1'; } catch (e) {}
+  if (MODE_VIS) stage.classList.add('vmode');
+  if (LITE) stage.classList.add('lite');
 
   // ---------- fit the 1920x1080 stage to any screen ----------
   function fitStage() {
@@ -219,14 +434,7 @@
     if (p >= 99.95) return '99,9 %';   // never "100 %" while something is still missing
     return p.toFixed(p < 1 ? 2 : 1).replace('.', ',') + ' %';
   }
-  function hhmm(d) {
-    try {
-      return d.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Ljubljana' });
-    } catch (e) {
-      var p = function (n) { return (n < 10 ? '0' : '') + n; };
-      return p(d.getHours()) + ':' + p(d.getMinutes());
-    }
-  }
+
 
   // shrink a line until it fits its box (stage is fixed px, so this is stable)
   function fit(el, max, box) {
@@ -235,41 +443,117 @@
     while (el.scrollWidth > box && size > 30) { size -= 4; el.style.fontSize = size + 'px'; }
   }
   function fitAll() {
-    var lb = stage.classList.contains('lb');
-    fit($('amt'), lb ? 170 : 210, $('amt').parentNode.clientWidth);
-    fit($('left'), lb ? 60 : 72, $('left').parentNode.clientWidth - $('pct').offsetWidth - 40);
+    var amt = $('amt');
+    fit(amt, 150, amt.clientWidth);   // the amount's own content width = the card's inner width (padding excluded)
   }
 
-  // ---------- animated numbers ----------
+  // ---------- split-flap board (the amount) ----------
+  // A board is built from digit cards + static characters ("." "," " " "€" ":").
+  // A new value: each changed card flips forward digit by digit to its target (max 10 steps, ~1.3 s).
+  // Idle: every flip_idle_s (default 25, +-20 %, so 20-30 s; 0 = never) the board on screen re-rolls through
+  // a few random digits and lands on the TRUE value (~1.3 s). Every queue ends on the true digit.
+  var FLAP_MS = 130, flipIdleS = 25, flipIdleT = null;
+  function calmMotion() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  function flapHalf(cls, d) {
+    var h = document.createElement('span'); h.className = 'fd-h ' + cls;
+    var i = document.createElement('i'); i.textContent = d; h.appendChild(i); return h;
+  }
+  function flapCard(d) {
+    var el = document.createElement('span'); el.className = 'fd';
+    var sz = document.createElement('span'); sz.className = 'fd-sz'; sz.textContent = '0';
+    var t = flapHalf('fd-t', d), b = flapHalf('fd-b', d);
+    el.appendChild(sz); el.appendChild(t); el.appendChild(b);
+    return { el: el, t: t, b: b, cur: d, queue: [], busy: false, start: null };
+  }
+  function flapShow(c, d) { c.cur = d; c.t.firstChild.textContent = d; c.b.firstChild.textContent = d; }
+  function flapStep(c) {
+    if (c.busy || !c.queue.length) return;
+    if (document.hidden || calmMotion() || !c.el.animate) { flapShow(c, c.queue[c.queue.length - 1]); c.queue = []; return; }
+    var cur = c.cur, nxt = c.queue.shift();
+    if (nxt === cur) { flapStep(c); return; }
+    c.busy = true; c.cur = nxt;
+    var ft = flapHalf('fd-t fd-flap', cur), fb = flapHalf('fd-b fd-flap', nxt), half = FLAP_MS / 2, done = false;
+    fb.style.transform = 'rotateX(90deg)';
+    c.t.firstChild.textContent = nxt;           // revealed behind the falling top flap
+    c.el.appendChild(ft); c.el.appendChild(fb);
+    ft.animate([{ transform: 'rotateX(0deg)' }, { transform: 'rotateX(-90deg)' }], { duration: half, easing: 'ease-in', fill: 'forwards' });
+    var a2 = fb.animate([{ transform: 'rotateX(90deg)' }, { transform: 'rotateX(0deg)' }], { duration: half, delay: half, easing: 'ease-out', fill: 'forwards' });
+    var fin = function () {
+      if (done) return; done = true;
+      c.b.firstChild.textContent = nxt;
+      if (ft.parentNode) ft.parentNode.removeChild(ft);
+      if (fb.parentNode) fb.parentNode.removeChild(fb);
+      c.busy = false; flapStep(c);
+    };
+    a2.onfinish = fin;
+    setTimeout(fin, FLAP_MS + 300);              // throttled tab: never get stuck mid-flip
+  }
+  function flapGo(c, path, delay) {
+    c.queue = path;
+    clearTimeout(c.start);
+    if (delay) c.start = setTimeout(function () { flapStep(c); }, delay); else flapStep(c);
+  }
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function makeBoard(el) {
+    var B = { el: el, shape: null, cards: [], text: null };
+    B.set = function (s, roll) {
+      var shape = s.replace(/\d/g, '0'), rebuilt = false;
+      B.text = s;
+      el.setAttribute('aria-label', s);
+      if (shape !== B.shape) {
+        B.cards.forEach(function (c) { clearTimeout(c.start); });
+        while (el.firstChild) el.removeChild(el.firstChild);
+        B.cards = [];
+        Array.from(s).forEach(function (ch) {
+          if (/\d/.test(ch)) { var c = flapCard(B.shape === null ? ch : '0'); B.cards.push(c); el.appendChild(c.el); }
+          else el.appendChild(document.createTextNode(ch));
+        });
+        rebuilt = B.shape !== null;   // the very first build shows the value straight away
+        B.shape = shape;
+      }
+      var digits = s.replace(/\D/g, '');
+      B.cards.forEach(function (c, k) {
+        var target = digits.charAt(k), from = c.cur, path = [];
+        if (roll || rebuilt) {
+          var n = 3 + rnd(4);
+          while (path.length < n) path.push(String(rnd(10)));
+          path.push(target);
+          flapGo(c, path, k * 45);
+        } else if (from === target) {
+          c.queue = []; clearTimeout(c.start);    // already there (or the flip in progress lands on it)
+        } else {
+          var d = Number(from);
+          do { d = (d + 1) % 10; path.push(String(d)); } while (String(d) !== target && path.length < 10);
+          flapGo(c, path, 0);
+        }
+      });
+    };
+    B.busy = function () { return B.cards.some(function (c) { return c.busy || c.queue.length; }); };
+    B.roll = function () { if (B.text !== null && !B.busy() && !document.hidden && !calmMotion()) B.set(B.text, true); };
+    return B;
+  }
+  var amtBoard = makeBoard($('amt'));
+  function flapIdle() {
+    clearTimeout(flipIdleT);
+    if (!(flipIdleS > 0)) return;
+    flipIdleT = setTimeout(function () {
+      if (lyCur === 'money') amtBoard.roll();
+      flapIdle();
+    }, flipIdleS * 1000 * (0.8 + Math.random() * 0.4));
+  }
+
+  // ---------- numbers ----------
   var shown = { g: 0, goal: 287430 };
-  var anim = null, backup = null, onScreen = 0;
   function render(g, goal) {
-    onScreen = g;
-    $('amt').textContent = eur(g);
-    $('left').textContent = g >= goal ? 'Cilj dosežen. Res?' : 'Manjka ' + eur(goal - g);
+    var s = eur(g);
+    if (s !== amtBoard.text) amtBoard.set(s, false);
+    $('left').textContent = g >= goal ? 'Cilj dosežen. Res?' : 'še manjka ' + eur(goal - g);
     var p = Math.min(100, g / goal * 100);
     $('pct').textContent = pctText(p);
   }
   function tweenTo(g, goal) {
-    var from = onScreen, start = null, dur = 2600;
-    shown.goal = goal;
-    if (anim) { cancelAnimationFrame(anim); anim = null; }
-    clearTimeout(backup);
-    var calm = false; try { calm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    if (calm || document.hidden || !window.requestAnimationFrame || from === g) {
-      shown.g = g; render(g, goal); fitAll(); return;
-    }
-    var step = function (ts) {
-      if (start === null) start = ts;
-      var k = Math.min(1, (ts - start) / dur), e = 1 - Math.pow(1 - k, 3);
-      var v = k >= 1 ? g : Math.round((from + (g - from) * e) * 100) / 100;
-      render(v, goal);
-      if (k < 1) anim = requestAnimationFrame(step); else { anim = null; fitAll(); }
-    };
-    shown.g = g;
-    render(Math.max(from, g), goal); fitAll();   // fit for the widest value first, so the line never jumps out of its box
-    anim = requestAnimationFrame(step);
-    backup = setTimeout(function () { if (anim) { cancelAnimationFrame(anim); anim = null; } render(g, goal); fitAll(); }, dur + 600);
+    shown.g = g; shown.goal = goal;
+    render(g, goal); fitAll();
   }
 
   // ---------- top 5 ----------
@@ -298,26 +582,699 @@
     });
   }
 
-  // ---------- layout ----------
-  var forced = null;
-  try { var q = new URLSearchParams(location.search).get('layout'); if (q === 'lb') forced = true; else if (q === 'bar') forced = false; } catch (e) {}
-  var lbOn = null;
-  function setLayout(on) {
-    if (forced !== null) on = forced;
-    if (on === lbOn) return;
-    var first = lbOn === null;
-    lbOn = on;
-    if (first) { stage.classList.toggle('lb', on); fitAll(); return; }
-    stage.classList.add('swap');
-    setTimeout(function () {
-      stage.classList.toggle('lb', on); fitAll();
-      requestAnimationFrame(function () { stage.classList.remove('swap'); });
-    }, 460);
+  // ---------- warp: per-letter wobble ----------
+  var wobN = 0;
+  function prand(i) { var x = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+  function wobTime(s) { wobN++; s.style.animationDuration = (3.2 + prand(wobN) * 2.8).toFixed(2) + 's'; s.style.animationDelay = (-prand(wobN + 977) * 6).toFixed(2) + 's'; return s; }
+  function wobChar(ch) { var s = document.createElement('span'); s.className = 'wch'; s.textContent = ch; return wobTime(s); }
+  function wobWrap(node) { var s = document.createElement('span'); s.className = 'wch'; s.appendChild(node); return wobTime(s); }
+  function wobWords(el, text) {   // words stay unbroken (nowrap), each glyph wobbles on its own
+    text.split(/(\s+)/).forEach(function (part) {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(' ')); return; }
+      var w = document.createElement('span'); w.className = 'wword';
+      Array.from(part).forEach(function (ch) { w.appendChild(wobChar(ch)); });
+      el.appendChild(w);
+    });
+  }
+  function wobInto(el) { var t = el.textContent; el.textContent = ''; wobWords(el, t); }
+  (function () {
+    var b = $('big20'); b.textContent = ''; b.appendChild(wobChar('2')); b.appendChild(wobChar('0'));
+    Array.prototype.forEach.call($('paint').children, wobInto);
+  })();
+  var warpKey = '', warpParam = null;
+  try { var qw = new URLSearchParams(location.search).get('warp'); if (qw !== null && isFinite(Number(qw))) warpParam = Math.max(0, Math.min(1, Number(qw))); } catch (e) {}
+  function applyWarp(w) {
+    if (!w || typeof w !== 'object' || Array.isArray(w)) w = {};
+    var it = (typeof w.intensity === 'number' && isFinite(w.intensity)) ? Math.max(0, Math.min(1, w.intensity)) : 0.6;
+    var on = w.on !== false;
+    if (warpParam !== null) { it = warpParam; on = it > 0; }
+    var reduced = false; try { reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    on = on && it > 0 && !reduced && !LITE && !MODE_VIS;
+    var key = on + '|' + it;
+    if (key === warpKey) return;
+    warpKey = key;
+    stage.style.setProperty('--wi', String(it));
+    stage.classList.toggle('warp', on);
+  }
+  applyWarp(null);
+
+  // ---------- rotating layouts ----------
+  // hero20 = the big 20, show = background scene only, money = amount + Top 5, slogan = the main line big,
+  // tv.json "layouts": { list, min_s, max_s, pin }. Test: tv.html?layout=money
+  var LY_ALL = ['hero20', 'show', 'money', 'slogan'];
+  var lyEls = {}; Array.prototype.forEach.call(document.querySelectorAll('.ly'), function (el) { lyEls[el.getAttribute('data-k')] = el; });
+  var ly = { list: LY_ALL.slice(), min: 20, max: 40, pin: '' }, lyCur = null, lyT = null, lyForced = null;
+  try {
+    var q = new URLSearchParams(location.search).get('layout');
+    if (q === 'lb' || q === 'bar') q = 'money';   // old test links
+    if (LY_ALL.indexOf(q) >= 0) lyForced = q;
+  } catch (e) {}
+  function lyShow(k) {
+    if (k === lyCur) return;
+    lyCur = k;
+    LY_ALL.forEach(function (n) { lyEls[n].classList.toggle('on', n === k); });
+    if (k === 'money') { fitAll(); amtBoard.roll(); }
+    if (k === 'slogan') fitSlogan();
+    if (k === 'show') visNow();
+  }
+  function lyOk(k) { return (k !== 'show' || (vis.on && !tkReduced)) && (k !== 'money' || hasData || lyForced === 'money'); }
+  function lyPick() {
+    var pool = ly.list.filter(function (k) { return k !== lyCur && lyOk(k); });
+    if (!pool.length) pool = ly.list.filter(lyOk);
+    if (!pool.length) pool = ['slogan'];
+    return pool[rnd(pool.length)];
+  }
+  function lyCycle() {
+    clearTimeout(lyT);
+    var fixed = lyForced || ly.pin;
+    if (fixed) { lyShow(fixed); return; }
+    lyShow(lyPick());
+    lyT = setTimeout(lyCycle, (ly.min + Math.random() * (ly.max - ly.min)) * 1000);
+  }
+  function applyLayouts(c) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) c = {};
+    var list = Array.isArray(c.list) ? c.list.filter(function (k) { return LY_ALL.indexOf(k) >= 0; }) : LY_ALL.slice();
+    if (!list.length) list = LY_ALL.slice();
+    var mn = (typeof c.min_s === 'number' && isFinite(c.min_s) && c.min_s >= 5) ? Math.min(c.min_s, 3600) : 20;
+    var mx = (typeof c.max_s === 'number' && isFinite(c.max_s) && c.max_s >= mn) ? Math.min(c.max_s, 3600) : Math.max(mn, 40);
+    var pin = (typeof c.pin === 'string' && LY_ALL.indexOf(c.pin) >= 0) ? c.pin : '';
+    var old = ly;
+    ly = { list: list, min: mn, max: mx, pin: pin };
+    if (lyForced) return;
+    if (MODE_VIS) return;
+    if (pin !== old.pin || (lyCur && (list.indexOf(lyCur) < 0 || !lyOk(lyCur)))) lyCycle();
+    else if (!pin && (mn !== old.min || mx !== old.max)) {   // new timings apply now, not after the old timer
+      clearTimeout(lyT); lyT = setTimeout(lyCycle, (mn + Math.random() * (mx - mn)) * 1000);
+    }
+  }
+  // the slogan layout shows the ticker's main line, its hot word red with the same shine
+  var slgKey = '';
+  function renderSlogan() {
+    var key = tk.main + '|' + tk.hot;
+    if (key === slgKey) return;
+    slgKey = key;
+    var el = $('slogan'), text = tk.main, at = tk.hot ? text.toUpperCase().indexOf(tk.hot.toUpperCase()) : -1;
+    while (el.firstChild) el.removeChild(el.firstChild);
+    var main = document.createElement('div'); main.className = 'slg-main';
+    el.appendChild(main);
+    if (at < 0) { wobWords(main, text); slgGhosts(el, main); return; }
+    var word = text.slice(at, at + tk.hot.length);
+    var hot = document.createElement('span'); hot.className = 'tk-hot'; hot.textContent = word;
+    var gl = document.createElement('span'); gl.className = 'tk-glow'; gl.textContent = word;
+    var sh = document.createElement('span'); sh.className = 'tk-shine';
+    var shx = document.createElement('span'); shx.textContent = word; sh.appendChild(shx);
+    hot.appendChild(gl); hot.appendChild(sh);
+    wobWords(main, text.slice(0, at));
+    main.appendChild(wobWrap(hot));   // the shining word wobbles as one piece so its glow stays on it
+    wobWords(main, text.slice(at + tk.hot.length));
+    slgGhosts(el, main);
+  }
+  function slgGhosts(el, main) {   // ghosts are clones of the same letter boxes, so they break lines exactly like the main text
+    ['slg-gh slg-r', 'slg-gh slg-c'].forEach(function (cls) {
+      var g = main.cloneNode(true); g.className = cls; g.setAttribute('aria-hidden', 'true');
+      el.insertBefore(g, main);
+    });
+    fitSlogan();
+  }
+  function fitSlogan() {   // shrink until the slogan fits between the bands (content zone 912 px, keep a margin)
+    var el = $('slogan'), main = el.querySelector('.slg-main'); if (!main) return;
+    var size = 150; el.style.fontSize = size + 'px';
+    while ((main.offsetHeight > 760 || main.scrollWidth > el.clientWidth + 2) && size > 50) { size -= 6; el.style.fontSize = size + 'px'; }
   }
 
+
+  // ---------- metro tickers: top band left -> right, bottom band right -> left ----------
+  // Each band is a conveyor of segments: "main" again and again; now and then one random egg is queued
+  // off screen at the entry edge, so it scrolls in naturally. No loop seam: segments are added at the entry edge
+  // and removed after they leave. Both bands share the egg pool but never show the same egg at the same time.
+  // tv.json "ticker" changes apply to the next segment that enters.
+
+  // separator symbols (viewBox 0 0 100 100, currentColor = red or white, #000 = cut-outs on the black band)
+  var SYM = {
+    star: '<polygon points="50,4 61,37 96,37 68,58 79,92 50,71 21,92 32,58 4,37 39,37"/>',
+    sickle: '<g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M62 12 A36 36 0 1 1 18 56" stroke-width="10"/><path d="M24 70 L10 86" stroke-width="12"/><path d="M40 40 L84 84" stroke-width="10"/><path d="M22 52 L52 22" stroke-width="17" stroke-linecap="butt"/></g>',
+    moon: '<path d="M72 11.9 A44 44 0 1 0 72 88.1 A48 48 0 0 1 72 11.9 Z"/>',
+    pp: '<g transform="rotate(-18 50 52)"><circle cx="33" cy="80" r="15"/><circle cx="67" cy="80" r="15"/><path d="M37 76 L37 24 C37 6 63 6 63 24 L63 76 Z"/><path d="M38 30 C44 36 56 36 62 30" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/></g>',
+    peach: '<path d="M50 30 C26 18 6 36 10 60 C14 82 34 95 50 95 C66 95 86 82 90 60 C94 36 74 18 50 30 Z" fill="#ff9a62"/><path d="M50 30 C66 26 84 34 88 52 C90 70 78 86 62 93 C74 80 78 62 70 48 C66 40 58 34 50 30 Z" fill="#ff6b6b" fill-opacity=".85"/><path d="M50 33 C43 47 43 71 52 92" fill="none" stroke="#d9483b" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="28" cy="54" rx="7" ry="11" fill="#fff" fill-opacity=".35"/><path d="M50 31 C46 18 35 10 20 12 C25 25 38 31 50 31 Z" fill="#3fae49"/><path d="M50 31 C57 16 69 10 84 14 C77 27 63 33 50 31 Z" fill="#2c9a3c"/>',
+    smiley: '<circle cx="50" cy="50" r="46" fill="#ffd400"/><ellipse cx="35" cy="38" rx="6" ry="10" fill="#000"/><ellipse cx="65" cy="38" rx="6" ry="10" fill="#000"/><path d="M23 58 Q50 88 77 58" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>',
+    bolt: '<polygon points="60,2 14,56 44,56 34,98 86,40 56,40 68,2"/>',
+    disco: '<path d="M50 16 V2" stroke="currentColor" stroke-width="3"/><circle cx="50" cy="56" r="40"/><g fill="none" stroke="#000" stroke-width="3"><path d="M12 56 H88 M15 38 H85 M15 74 H85 M27 24 H73 M27 88 H73 M50 16 V96 M31 21 C22 40 22 72 31 91 M69 21 C78 40 78 72 69 91"/></g>',
+    flag: '<rect x="10" y="8" width="7" height="88" rx="3"/><rect x="19" y="10" width="72" height="48" fill="none" stroke="currentColor" stroke-width="3"/><path d="M19 10h18v16H19zM55 10h18v16H55zM37 26h18v16H37zM73 26h18v16H73zM19 42h18v16H19zM55 42h18v16H55z"/>',
+    wheel: '<g fill="none" stroke="currentColor" stroke-width="10"><circle cx="50" cy="50" r="40"/><path d="M12 46 C30 39 70 39 88 46 M50 56 V90"/></g><circle cx="50" cy="50" r="12"/>',
+    car: '<path d="M4 68 L6 56 C12 50 22 48 32 46 C40 32 52 28 64 29 C74 30 80 38 86 46 C92 48 96 54 96 62 L96 68 Z"/><path d="M44 44 C50 35 58 33 66 34 C72 35 76 40 78 44 Z" fill="#000"/><circle cx="26" cy="70" r="10"/><circle cx="76" cy="70" r="10"/><circle cx="26" cy="70" r="4" fill="#000"/><circle cx="76" cy="70" r="4" fill="#000"/>',
+    badge20: '<circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" stroke-width="7"/><text x="50" y="64" text-anchor="middle" font-family="Unbounded, Arial Black, sans-serif" font-weight="800" font-size="40" letter-spacing="-2">20</text>',
+    crown: '<path d="M8 78 L14 32 L34 54 L50 22 L66 54 L86 32 L92 78 Z"/><rect x="8" y="82" width="84" height="10" rx="3"/><circle cx="14" cy="26" r="6"/><circle cx="50" cy="16" r="6"/><circle cx="86" cy="26" r="6"/>',
+    coupe: '<path d="M8 22 H92 C90 44 72 54 50 54 C28 54 10 44 8 22 Z"/><rect x="46" y="52" width="8" height="32"/><path d="M24 94 C28 84 72 84 76 94 Z"/><circle cx="40" cy="34" r="3" fill="#000"/><circle cx="58" cy="30" r="2.5" fill="#000"/><circle cx="52" cy="42" r="2" fill="#000"/><circle cx="74" cy="10" r="3"/><circle cx="84" cy="4" r="2"/>',
+    flame: '<path d="M50 4 C58 24 80 34 78 62 C76 84 62 96 50 96 C34 96 20 84 22 62 C24 46 36 40 38 26 C46 34 46 44 48 50 C54 40 54 22 50 4 Z"/><path d="M50 58 C56 66 62 72 60 82 C58 90 52 94 48 94 C40 94 36 86 38 78 C40 70 46 68 50 58 Z" fill="#000" fill-opacity=".5"/>',
+    castle: '<path d="M22 96 V30 H30 V16 H40 V30 H46 V16 H54 V30 H60 V16 H70 V30 H78 V96 Z"/><path d="M42 96 V78 C42 70 58 70 58 78 V96 Z" fill="#000"/><rect x="45" y="44" width="10" height="16" rx="5" fill="#000"/>',
+    matryoshka: '<path d="M50 6 C64 6 70 18 68 30 C80 40 84 60 80 78 C76 92 64 96 50 96 C36 96 24 92 20 78 C16 60 20 40 32 30 C30 18 36 6 50 6 Z"/><ellipse cx="50" cy="30" rx="13" ry="12" fill="#000"/><circle cx="45" cy="29" r="2.4"/><circle cx="55" cy="29" r="2.4"/><path d="M45 36 Q50 39 55 36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M30 62 Q50 72 70 62" fill="none" stroke="#000" stroke-width="3"/><circle cx="50" cy="80" r="7" fill="#000"/>',
+    bear: '<circle cx="22" cy="24" r="14"/><circle cx="78" cy="24" r="14"/><circle cx="50" cy="54" r="40"/><circle cx="36" cy="46" r="5" fill="#000"/><circle cx="64" cy="46" r="5" fill="#000"/><ellipse cx="50" cy="68" rx="16" ry="12" fill="#000"/><ellipse cx="50" cy="63" rx="6" ry="4"/>',
+    eye: '<path d="M4 50 C24 18 76 18 96 50 C76 82 24 82 4 50 Z"/><circle cx="50" cy="50" r="18" fill="#000"/><circle cx="50" cy="50" r="8"/><circle cx="57" cy="43" r="3.5"/>',
+    infinity: '<path d="M50 50 C40 32 14 30 10 50 C14 70 40 68 50 50 C60 32 86 30 90 50 C86 70 60 68 50 50 Z" fill="none" stroke="currentColor" stroke-width="10" stroke-linejoin="round"/>',
+    cherries: '<path d="M30 66 C34 44 46 28 66 12 M72 62 C68 42 66 28 66 12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M66 12 C76 4 92 8 94 18 C82 22 72 20 66 12 Z"/><circle cx="28" cy="76" r="18"/><circle cx="72" cy="72" r="18"/>',
+    dice: '<rect x="8" y="8" width="84" height="84" rx="16"/><g fill="#000"><circle cx="30" cy="30" r="8"/><circle cx="70" cy="30" r="8"/><circle cx="50" cy="50" r="8"/><circle cx="30" cy="70" r="8"/><circle cx="70" cy="70" r="8"/></g>',
+    lips: '<g transform="rotate(-14 50 50)"><path d="M5 50 C12 33 26 24 39 28 C44 30 47 34 50 34 C53 34 56 30 61 28 C74 24 88 33 95 50 C84 55 68 57 50 57 C32 57 16 55 5 50 Z" fill="#e8132f"/><path d="M5 50 C16 55 32 57 50 57 C68 57 84 55 95 50 C88 70 72 84 50 84 C28 84 12 70 5 50 Z" fill="#c3001d"/><path d="M8 50 C26 55 40 56 50 56 C60 56 74 55 92 50" fill="none" stroke="#6e0010" stroke-width="3" stroke-linecap="round"/><ellipse cx="36" cy="70" rx="11" ry="4" fill="#fff" fill-opacity=".45"/><ellipse cx="66" cy="39" rx="7" ry="3" fill="#fff" fill-opacity=".4"/></g>'
+  };
+  var SYM_IDS = Object.keys(SYM);
+  var TK_DEFAULT = {
+    on: true,
+    main: "AIN'T NO PARTY LIKE A PRIVALOV PARTY",
+    hot: "PRIVALOV",          // this word of "main" is red and shines
+    eggs: [
+      "20 let, 0 obžalovanj", "Bolje biti pijan nego star", "It's Friday, I'm in luv", "Free your mind",
+      "Give me everything", "Na zdravje · Cheers · Ура", "Selfie s slavljencem je obvezen",
+      "Plesišče je tam, kjer stojiš", "Hvala, da si tu", "Rojen za žur", "20 je novih 18",
+      "Kar se zgodi v Tivoliju, ostane v Tivoliju", "Telefon v žep, roke gor", "Nihče ne gre domov",
+      "Legende pridejo pozno in ostanejo do konca", "Še ena pesem, pa gremo. Ne gremo.",
+      "Danes plešemo, jutri razmišljamo", "Grad Tivoli je nocoj naš",
+      "Tu se ne sedi", "Ura? Nima veze.", "Nocoj si VIP", "Twenty and plenty", "Castle on the hill",
+      "Vodka is the new voda", "FIREBALL", "Dance till you're dead"
+    ],
+    egg_every_s: 45,
+    top: { on: true, speed_px_s: 100 },
+    bottom: { on: true, speed_px_s: 120 },
+    symbols: SYM_IDS.slice()
+  };
+  var TK_W = 1920, TK_AHEAD = 240, TK_MIN_W = 200, TK_MAX_SEGS = 40;            // stage width; new segments are born this far past the entry edge
+  var tk = null, tkKey = '', tkRaf = null, tkLast = null, tkReady = false;
+  var tkReduced = false; try { tkReduced = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  var tkEggParam = null;   // test only: tv.html?egg=5 = an egg about every 5 s, eggs may come back to back
+  try { var qe = Number(new URLSearchParams(location.search).get('egg')); if (isFinite(qe) && qe >= 1) tkEggParam = qe; } catch (e) {}
+  function tkBand(id, dir, key) { return { box: $(id), dir: dir, key: key, segs: [], head: 0, run: false, nextEgg: 0, lastEgg: null, staticEgg: null, staticT: null, offT: null }; }
+  var bands = [tkBand('tickerTop', 1, 'top'), tkBand('ticker', -1, 'bottom')];
+
+  function tkClean(t) {
+    var d = TK_DEFAULT, c = {};
+    if (!t || typeof t !== 'object' || Array.isArray(t)) t = {};
+    var str = function (s) { return typeof s === 'string' ? Array.from(s.replace(/\s+/g, ' ').trim()).slice(0, 140).join('') : ''; };
+    var num = function (v) { return typeof v === 'number' && isFinite(v); };
+    c.on = t.on !== false;
+    c.main = str(t.main) || d.main;
+    c.hot = typeof t.hot === 'string' ? str(t.hot) : d.hot;   // "" = no highlighted word
+    c.eggs = Array.isArray(t.eggs) ? t.eggs.map(str).filter(Boolean).slice(0, 100) : d.eggs.slice();
+    c.egg_every_s = (num(t.egg_every_s) && t.egg_every_s >= 5) ? Math.min(t.egg_every_s, 3600) : d.egg_every_s;
+    if (tkEggParam) c.egg_every_s = tkEggParam;
+    var gs = num(t.speed_px_s) && t.speed_px_s > 0 ? t.speed_px_s : null;   // old single-speed key still works for both bands
+    ['top', 'bottom'].forEach(function (k) {
+      var b = (t[k] && typeof t[k] === 'object' && !Array.isArray(t[k])) ? t[k] : {};
+      var s = (num(b.speed_px_s) && b.speed_px_s > 0) ? b.speed_px_s : (gs || d[k].speed_px_s);
+      c[k] = { on: c.on && b.on !== false, speed_px_s: Math.max(30, Math.min(s, 400)) };
+    });
+    c.symbols = Array.isArray(t.symbols) ? t.symbols.filter(function (id) { return typeof id === 'string' && SYM.hasOwnProperty(id); }) : d.symbols.slice();
+    if (!c.symbols.length) c.symbols = ['star'];
+    return c;
+  }
+  function tkSchedule(b, extra) { b.nextEgg = performance.now() + tk.egg_every_s * 1000 * (0.75 + Math.random() * 0.5 + (extra || 0)); }   // +-25 % jitter
+  function tkPickEgg(b) {
+    var busy = {};
+    bands.forEach(function (o) { o.segs.forEach(function (s) { if (s.egg) busy[s.text] = 1; }); if (o.staticEgg) busy[o.staticEgg] = 1; });
+    var pool = tk.eggs.filter(function (e) { return !busy[e] && e !== b.lastEgg; });
+    if (!pool.length) pool = tk.eggs.filter(function (e) { return !busy[e]; });
+    if (!pool.length) return null;
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    b.lastEgg = pick; return pick;
+  }
+  function tkSymbol() {
+    var ids = tk.symbols, id;
+    if (ids.indexOf('star') >= 0 && (ids.length === 1 || Math.random() < 0.55)) id = 'star';   // mostly stars
+    else { var rest = ids.filter(function (x) { return x !== 'star'; }); id = rest[Math.floor(Math.random() * rest.length)]; }
+    var sp = document.createElement('span');
+    sp.className = 'tk-sep ' + (Math.random() < 0.5 ? 'r' : 'w') + ' s-' + id;
+    sp.innerHTML = '<svg viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">' + SYM[id] + '</svg>';   // fixed strings from SYM only
+    return sp;
+  }
+  function tkWords(el, text) {   // ticker warp: each word wobbles gently as one piece (letters stay together, readable)
+    text.split(/(\s+)/).forEach(function (part) {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(' ')); return; }
+      var w = document.createElement('span'); w.className = 'wch'; w.textContent = part; el.appendChild(wobTime(w));
+    });
+  }
+  function tkMake(b, text, egg) {
+    var seg = document.createElement('div'); seg.className = 'tk-seg' + (egg ? ' egg' : '');
+    var tx = document.createElement('span'); tx.className = 'tk-txt';
+    var at = (!egg && tk.hot) ? text.toUpperCase().indexOf(tk.hot.toUpperCase()) : -1;
+    if (at < 0) tkWords(tx, text);
+    else {
+      var word = text.slice(at, at + tk.hot.length);
+      var hot = document.createElement('span'); hot.className = 'tk-hot'; hot.textContent = word;
+      var gl = document.createElement('span'); gl.className = 'tk-glow'; gl.textContent = word;
+      var sh = document.createElement('span'); sh.className = 'tk-shine';
+      var shx = document.createElement('span'); shx.textContent = word; sh.appendChild(shx);
+      hot.appendChild(gl); hot.appendChild(sh);
+      tkWords(tx, text.slice(0, at));
+      var hw = wobWrap(hot); hw.className += ' twh'; tx.appendChild(hw);
+      tkWords(tx, text.slice(at + tk.hot.length));
+    }
+    seg.appendChild(tx); seg.appendChild(tkSymbol());
+    seg.style.transform = 'translate3d(' + (b.dir < 0 ? TK_W + TK_AHEAD : -9999) + 'px,0,0)';
+    b.box.appendChild(seg);
+    return { el: seg, w: Math.max(TK_MIN_W, seg.offsetWidth), egg: !!egg, text: text };   // never 0: a hidden band cannot loop forever
+  }
+  function tkNext(b, allowEgg) {
+    var prev = b.segs[b.segs.length - 1];
+    if (allowEgg && tk.eggs.length && performance.now() >= b.nextEgg && prev && (tkEggParam || !prev.egg)) {
+      var e = tkPickEgg(b); tkSchedule(b);
+      if (e) return tkMake(b, e, true);
+    }
+    return tkMake(b, tk.main, false);
+  }
+  // u = distance from the exit edge along the travel direction; bottom band x = u, top band is mirrored
+  function tkPlace(b) {
+    var u = b.head;
+    for (var i = 0; i < b.segs.length; i++) {
+      var s = b.segs[i], x = b.dir < 0 ? u : TK_W - u - s.w;
+      s.el.style.transform = 'translate3d(' + x.toFixed(2) + 'px,0,0)'; u += s.w;
+    }
+  }
+  function tkFrame(ts) {
+    tkRaf = requestAnimationFrame(tkFrame);
+    var dt = tkLast === null ? 0 : Math.min(0.25, Math.max(0, (ts - tkLast) / 1000));   // tab was hidden: no big jump
+    tkLast = ts;
+    for (var k = 0; k < bands.length; k++) {
+      var b = bands[k];
+      if (!b.run) continue;
+      b.head -= tk[b.key].speed_px_s * dt;
+      while (b.segs.length > 1 && b.head + b.segs[0].w < 0) { var s = b.segs.shift(); b.head += s.w; b.box.removeChild(s.el); }
+      var u = b.head, i;
+      for (i = 0; i < b.segs.length; i++) u += b.segs[i].w;
+      while (u < TK_W + TK_AHEAD && b.segs.length < TK_MAX_SEGS) { var n = tkNext(b, true); b.segs.push(n); u += n.w; }
+      tkPlace(b);
+    }
+  }
+  function tkLoop() {
+    var any = bands.some(function (b) { return b.run; });
+    if (any && !tkRaf) { tkLast = null; tkRaf = requestAnimationFrame(tkFrame); }
+    if (!any && tkRaf) { cancelAnimationFrame(tkRaf); tkRaf = null; }
+  }
+  function bandStop(b) {
+    b.run = false;
+    b.segs.forEach(function (s) { if (s.el.parentNode) s.el.parentNode.removeChild(s.el); });
+    b.segs = [];
+    clearTimeout(b.staticT); b.staticEgg = null;
+    var st = b.box.querySelector('.tk-static'); if (st) st.parentNode.removeChild(st);
+  }
+  function bandStart(b) {
+    bandStop(b);
+    b.head = 0;
+    var u = 0;
+    while (u < TK_W + TK_AHEAD && b.segs.length < TK_MAX_SEGS) { var n = tkNext(b, false); b.segs.push(n); u += n.w; }   // the band starts full of the main line
+    tkPlace(b);
+    b.run = true; tkLoop();
+  }
+  function tkMeasure() {   // a late web font changes widths: re-measure, positions follow from the first segment
+    bands.forEach(function (b) { if (!b.segs.length) return; b.segs.forEach(function (s) { s.w = Math.max(TK_MIN_W, s.el.offsetWidth); }); tkPlace(b); });
+  }
+  // reduced motion: the line stands still, an egg replaces it for 8 s now and then
+  function bandStatic(b) {
+    bandStop(b);
+    var box = document.createElement('div'); box.className = 'tk-static';
+    var tx = document.createElement('span'); tx.className = 'tk-txt'; box.appendChild(tx); b.box.appendChild(box);
+    var showMain = function () { b.staticEgg = null; box.classList.remove('egg'); tx.textContent = tk.main; clearTimeout(b.staticT); b.staticT = setTimeout(showEgg, tk.egg_every_s * 1000 * (b.key === 'top' ? 1.5 : 1)); };
+    var showEgg = function () {
+      var e = tk.eggs.length ? tkPickEgg(b) : null;
+      if (!e) return showMain();
+      b.staticEgg = e; box.classList.add('egg'); tx.textContent = e; clearTimeout(b.staticT); b.staticT = setTimeout(showMain, 8000);
+    };
+    showMain();
+  }
+  function applyTicker(t) {
+    var c = tkClean(t), key = JSON.stringify(c);
+    if (key === tkKey) return;
+    var old = tk; tk = c; tkKey = key;
+    renderSlogan();
+    if (MODE_VIS) return;   // projector view: tickers are never built (hidden bands measure 0 px)
+    bands.forEach(function (b) {
+      var on = c[b.key].on;
+      if (!old || old.egg_every_s !== c.egg_every_s) tkSchedule(b, b.key === 'top' ? 0.5 : 0);   // bands start out of step
+      b.box.classList.toggle('off', !on);
+      clearTimeout(b.offT);
+      if (!on) {   // fade the band and its text together, then stop it
+        b.offT = setTimeout(function () { if (!tk[b.key].on) { bandStop(b); tkLoop(); } }, 650);
+        return;
+      }
+      if (!tkReady) return;
+      if (tkReduced) bandStatic(b);
+      else if (!b.run) bandStart(b);
+    });
+  }
+  function tkBoot() {
+    if (tkReady) return;
+    tkReady = true;
+    if (MODE_VIS) return;   // projector view: no tickers, ever
+    bands.forEach(function (b) { if (tk[b.key].on) { if (tkReduced) bandStatic(b); else bandStart(b); } });
+  }
+  applyTicker(null);   // built-in defaults until tv.json says otherwise
+  // load the š/ž/č and Cyrillic font files before the first segment is measured
+  (function () {
+    var warm = [];
+    try {
+      if (document.fonts && document.fonts.load) {
+        warm.push(document.fonts.load('700 46px "Unbounded"', 'AŠšŽžČčĆćĐđ Ура'));
+        warm.push(document.fonts.load('800 100px "Unbounded"', '0123456789'));
+      }
+    } catch (e) {}
+    Promise.all(warm).then(function () { return document.fonts && document.fonts.ready; }).then(tkBoot, tkBoot);
+    try { document.fonts.addEventListener('loadingdone', tkMeasure); } catch (e) {}
+  })();
+  setTimeout(tkBoot, 2500);   // fonts slow or blocked (offline): start anyway with the fallback font
+
+  // ---------- background visuals ----------
+  // Procedural scenes (CSS only, no video, no logos) that appear one at a time behind everything.
+  // tv.json "visuals_on": false fades them out live; "visuals_every_s" sets the average pause between scenes.
+  // Test: tv.html?scene=1..7 plays that scene again and again; ?scene=0 = only the fog and grain.
+  // 1 headlights, 2 GT3 RS pass, 3 warehouse, 4 tunnel, 5 chrome rose, 6 petal vortex, 7 drifting chrome roses.
+  var CAR_IMG = '<img class="p-img" src="assets/gt3rs-silhouette.png" alt="">';
+  (new Image()).src = 'assets/gt3rs-silhouette.png';   // cached before the first pass
+  var fan = '', rings = '';
+  for (var fi = 0; fi < (LITE ? 6 : 12); fi++) fan += '<i style="transform:rotate(' + (fi * (LITE ? 60 : 30)) + 'deg)"></i>';
+  for (var ri = 0; ri < (LITE ? 3 : 5); ri++) rings += '<i class="t-ring" style="animation-delay:' + (-ri * (LITE ? 2 : 1.2)) + 's"></i>';
+  // ---- chrome roses (style borrowed from the Free Your Mind video: liquid-silver roses on black, one red flare) ----
+  // Sprites are drawn once at start; scenes only move them (CSS / drawImage), so they stay cheap.
+  function chromeGrad(ctx, x0, y0, x1, y1, lit) {
+    var g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgb(' + [18, 18, 22] + ')');
+    g.addColorStop(.35, 'rgb(' + [Math.round(90 * lit), Math.round(90 * lit), Math.round(98 * lit)] + ')');
+    g.addColorStop(.55, 'rgb(' + [Math.round(245 * lit), Math.round(245 * lit), Math.round(250 * lit)] + ')');
+    g.addColorStop(.7, 'rgb(' + [Math.round(120 * lit), Math.round(120 * lit), Math.round(128 * lit)] + ')');
+    g.addColorStop(1, 'rgb(' + [Math.round(220 * lit), Math.round(220 * lit), Math.round(228 * lit)] + ')');
+    return g;
+  }
+  function chromePetal(ctx, l, w, lit) {
+    petalPath(ctx, l, w);
+    ctx.fillStyle = chromeGrad(ctx, -w, -l * .2, w * .7, -l, lit); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.lineWidth = Math.max(1, l * .018); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-w * .55, -l * .78); ctx.quadraticCurveTo(0, -l * 1.02, w * .55, -l * .78);   // rolled bright lip
+    ctx.strokeStyle = 'rgba(255,255,255,' + (.55 * lit) + ')'; ctx.lineWidth = Math.max(1, l * .03); ctx.stroke();
+  }
+  function petalPath(ctx, l, w) {
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(w, -l * .3, w * .9, -l * .85, 0, -l);
+    ctx.bezierCurveTo(-w * .9, -l * .85, -w, -l * .3, 0, 0);
+  }
+  function makeRose(size) {
+    var c = document.createElement('canvas'); c.width = c.height = size;
+    var ctx = c.getContext('2d'), N = 46, cx = size / 2;
+    var halo = ctx.createRadialGradient(cx, cx, 0, cx, cx, cx);
+    halo.addColorStop(0, 'rgba(255,255,255,.10)'); halo.addColorStop(.6, 'rgba(255,255,255,.03)'); halo.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = halo; ctx.fillRect(0, 0, size, size);
+    for (var i = N - 1; i >= 0; i--) {   // outer petals first, inner on top
+      var t = i / (N - 1), ang = i * 2.39996, r = size * (.03 + t * .2), l = size * (.1 + t * .27);
+      ctx.save(); ctx.translate(cx + Math.cos(ang) * r * .5, cx + Math.sin(ang) * r * .5); ctx.rotate(ang + Math.PI / 2);
+      chromePetal(ctx, l, l * (.75 + .15 * Math.sin(i)), .55 + .45 * (1 - t) * (.6 + .4 * Math.sin(i * 1.7)));
+      ctx.restore();
+    }
+    ctx.beginPath();   // tight centre swirl
+    for (var k = 0; k < 220; k++) { var a2 = k * .13, rr = size * .004 * k * .12; ctx.lineTo(cx + Math.cos(a2) * rr, cx + Math.sin(a2) * rr); }
+    ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = size * .006; ctx.stroke();
+    return c;
+  }
+  function makePetal(w, hgt, tint) {
+    var c = document.createElement('canvas'); c.width = w; c.height = hgt;
+    var ctx = c.getContext('2d'); ctx.translate(w / 2, hgt - 2);
+    chromePetal(ctx, hgt - 4, w * .46, 1);
+    if (tint) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = tint; ctx.fillRect(0, 0, w, hgt); }
+    return c;
+  }
+  var ROSE_URL = '', PET = null;
+  try {
+    makeRose(640).toBlob(function (b) { if (b) ROSE_URL = URL.createObjectURL(b); }, 'image/png');   // short blob: URL, built once
+    PET = { w: makePetal(90, 120), r: makePetal(90, 120, 'rgba(255,30,40,.85)'), g: makePetal(90, 120, 'rgba(40,255,90,.8)'), b: makePetal(90, 120, 'rgba(40,90,255,.85)') };
+  } catch (e) {}
+  function roseImg(cls, style) { return '<img class="' + cls + '" src="' + ROSE_URL + '" alt="" style="' + (style || '') + '">'; }
+  // scene 6: petal vortex spiralling into the centre, with drifting rainbow (chromatic) fringes; beat makes it spin and split
+  function cvVortex(ctx, t) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, 960, 540);
+    if (!PET) return;
+    var bp = beatPulse(), N = LITE ? 24 : 54, spin = t * .32 + bp * .06;
+    var split = 2.5 + 2 * Math.sin(t * .55) + bp * 3;
+    var passes = LITE ? [[PET.r, split, 0, .55, 'lighter'], [PET.w, 0, 0, .95, 'source-over']]
+      : [[PET.r, split, 0, .55, 'lighter'], [PET.g, 0, split * .6, .35, 'lighter'], [PET.b, -split, -split * .3, .55, 'lighter'], [PET.w, 0, 0, .95, 'source-over']];
+    for (var pI = 0; pI < passes.length; pI++) {
+      var P = passes[pI]; ctx.globalCompositeOperation = P[4];
+      for (var i = 0; i < N; i++) {
+        var u = ((i / N) + t * .055) % 1, rr = 560 * Math.pow(1 - u, 1.5), ang = i * 2.39996 + spin + u * 5;
+        var sc = (.12 + (1 - u) * 1.15) * (1 + bp * .08), a = P[3] * Math.sin(Math.PI * u);
+        var x = 480 + Math.cos(ang) * rr + P[1], y = 270 + Math.sin(ang) * rr * .78 + P[2], rot = ang + Math.PI / 2 + u * 1.5;
+        var c = Math.cos(rot) * sc, s = Math.sin(rot) * sc;
+        ctx.globalAlpha = a; ctx.setTransform(c, s, -s, c, x, y); ctx.drawImage(P[0], -45, -118);
+      }
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  }
+  function driftHtml() { var s = ''; for (var di = 0; di < (LITE ? 4 : 7); di++) s += roseImg('cr-drift', 'width:' + (150 + (di * 53) % 140) + 'px'); return s; }
+  var SCENES = [
+    { k: 'lights', dur: 16000, html: '<i class="l-glow"></i><i class="l-beam l-ba"></i><i class="l-beam l-bb"></i><i class="l-lamp l-a"></i><i class="l-lamp l-b"></i><i class="l-streak"></i><i class="l-fog"></i>' },
+    { k: 'pass', dur: 3600, html: '<i class="p-floor"></i><i class="p-streak"></i><div class="p-car"><i class="p-ln l1"></i><i class="p-ln l2"></i><i class="p-ln l4"></i><i class="p-ln l3"></i><i class="p-beam"></i>' + CAR_IMG + '</div>' },
+    { k: 'wh', dur: 24000, html: '<i class="w-struct"></i><i class="w-beam w-1"></i><i class="w-beam w-2"></i><i class="w-beam w-3"></i><i class="w-haze"></i>' },
+    { k: 'tun', dur: 18000, html: '<div class="t-fan">' + fan + '</div>' + rings },
+    { k: 'chrome', dur: 20000, html: function () { return '<i class="cr-glow"></i><div class="cr-pulse"><div class="cr-in">' + roseImg('cr-big') + '</div></div><i class="cr-flare"></i>'; } },
+    { k: 'vortex', dur: 18000, html: '<i class="cr-flare f2"></i>', cv: cvVortex },
+    { k: 'drift', dur: 22000, html: driftHtml, init: initDrift }
+  ];
+  var visEl = $('vis'), vis = { on: true, every: 30 }, visT = null, visLast = -1, visForced = null;
+  try { var qs = new URLSearchParams(location.search).get('scene'); if (qs !== null && /^[0-7]$/.test(qs)) visForced = Number(qs); } catch (e) {}
+  function visPlay(i) {
+    var s = SCENES[i], el = document.createElement('div');
+    el.className = 'sc sc-' + s.k + (s.k === 'pass' && Math.random() < 0.5 ? ' rev' : '');
+    el.innerHTML = typeof s.html === 'function' ? s.html() : s.html;   // fixed strings above only
+    visEl.appendChild(el);
+    if (s.init) s.init(el, s.dur);
+    if (s.cv) {   // canvas scene: own rAF loop, stops when the scene element is removed
+      var cv = document.createElement('canvas'); cv.width = 960; cv.height = 540; cv.className = 'sc-cv'; el.appendChild(cv);
+      var ctx = cv.getContext('2d'), t0 = null;
+      var loop = function (ts) { if (!el.parentNode) return; if (t0 === null) t0 = ts; s.cv(ctx, (ts - t0) / 1000); requestAnimationFrame(loop); };
+      requestAnimationFrame(loop);
+    }
+    setTimeout(function () { el.classList.add('out'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2100); }, s.dur);
+    return s.dur;
+  }
+  function initDrift(el, dur) {   // small chrome roses float across the dark, each on its own slow path
+    Array.prototype.forEach.call(el.querySelectorAll('.cr-drift'), function (im, k) {
+      var y0 = 120 + prand(k * 7 + 1) * 760, y1 = 120 + prand(k * 7 + 2) * 760, dir = k % 2 ? 1 : -1;
+      var x0 = dir > 0 ? -320 : 2000, x1 = dir > 0 ? 2000 : -320, r0 = prand(k + 9) * 360, len = dur * (.7 + prand(k + 3) * .5);
+      if (!im.animate) return;
+      im.animate([{ transform: 'translate3d(' + x0 + 'px,' + y0 + 'px,0) rotate(' + r0 + 'deg)' },
+                  { transform: 'translate3d(' + x1 + 'px,' + y1 + 'px,0) rotate(' + (r0 + dir * 140) + 'deg)' }],
+        { duration: len, delay: -prand(k + 5) * len * .6, easing: 'linear', fill: 'both' });
+    });
+  }
+  function visActive() { return Array.prototype.some.call(visEl.querySelectorAll('.sc'), function (el) { return !el.classList.contains('out'); }); }
+  function visSchedule(mode) {   // mode: 'first' (page start), 'now' (show layout came in), undefined (normal)
+    clearTimeout(visT);
+    if (!vis.on || tkReduced || visForced === 0) return;
+    var wait = visForced ? (mode === 'first' ? 800 : 1500)
+      : mode === 'now' ? 300 : mode === 'first' ? (MODE_VIS ? 800 : 6000)
+      : (lyCur === 'show' || pureOn || MODE_VIS) ? 1200 : vis.every * 1000 * (0.6 + Math.random() * 0.8);
+    visT = setTimeout(function () {
+      if (document.hidden) { visSchedule(); return; }
+      var i = visForced ? visForced - 1 : (pureOn ? [3, 4, 5, 6][rnd(4)] : Math.floor(Math.random() * SCENES.length));
+      if (!visForced && i === visLast) i = (i + 1 + Math.floor(Math.random() * (SCENES.length - 1))) % SCENES.length;
+      visLast = i;
+      var dur = visPlay(i);
+      visT = setTimeout(function () { visSchedule(); }, dur + ((lyCur === 'show' || pureOn || MODE_VIS) ? 400 : 2200));   // the pause starts after the scene
+    }, wait);
+  }
+  function visNow() { if (vis && !visActive()) visSchedule('now'); }
+  function applyVisuals(j) {
+    var on = j.visuals_on !== false;
+    var ev = j.visuals_every_s; vis.every = (typeof ev === 'number' && isFinite(ev) && ev >= 5) ? Math.min(ev, 3600) : 30;
+    if (on === vis.on) return;
+    vis.on = on;
+    visEl.classList.toggle('off', !on);
+    if (!on) {
+      clearTimeout(visT);
+      setTimeout(function () { if (!vis.on) Array.prototype.slice.call(visEl.querySelectorAll('.sc')).forEach(function (el) { el.parentNode.removeChild(el); }); }, 1300);
+    } else visSchedule('first');
+    if (lyCur && !lyOk(lyCur) && !MODE_VIS) lyCycle();
+  }
+  visSchedule('first');
+
+  // ---------- pure-beats moment ----------
+  // Every few minutes both ticker bands slide out (1.5 s), the layouts fade and a background scene takes the
+  // whole screen, pulsing to the beat, for 15-25 s; then everything slides back. tv.json "pure_beats".
+  var pure = { on: true, min: 180, max: 360, dmin: 15, dmax: 25 }, pureT = null, pureOn = false, pureForced = false;
+  try { pureForced = new URLSearchParams(location.search).get('purebeats') === '1'; } catch (e) {}
+  function pureSchedule(first) {
+    clearTimeout(pureT);
+    if (!pure.on || tkReduced || MODE_VIS) return;
+    var wait = pureForced ? (first ? 2500 : 25000) : (pure.min + Math.random() * (pure.max - pure.min)) * 1000;
+    pureT = setTimeout(pureStart, wait);
+  }
+  function pureStart() {
+    if (document.hidden || !vis.on || ((lyForced || ly.pin) && !pureForced)) { pureSchedule(); return; }
+    pureOn = true; stage.classList.add('pure'); clearTimeout(lyT);
+    if (!visForced) { Array.prototype.forEach.call(visEl.querySelectorAll('.sc'), function (el) { el.classList.add('out'); }); visSchedule('now'); }
+    pureT = setTimeout(pureEnd, (pure.dmin + Math.random() * (pure.dmax - pure.dmin)) * 1000);
+  }
+  function pureEnd() { pureOn = false; stage.classList.remove('pure'); lyCycle(); pureSchedule(); }
+  function applyPure(c) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) c = {};
+    var ev = Array.isArray(c.every_s) ? c.every_s : [180, 360], du = Array.isArray(c.duration_s) ? c.duration_s : [15, 25];
+    var num = function (v, d, lo) { return (typeof v === 'number' && isFinite(v) && v >= lo) ? v : d; };
+    var n = { on: c.on !== false, min: num(ev[0], 180, 30), max: 0, dmin: num(du[0], 15, 5), dmax: 0 };
+    n.max = Math.max(n.min, num(ev[1], 360, 30)); n.dmax = Math.max(n.dmin, Math.min(num(du[1], 25, 5), 120));
+    var changed = n.on !== pure.on || n.min !== pure.min || n.max !== pure.max;
+    pure = n;
+    if (!n.on && pureOn) pureEnd();
+    else if (changed && !pureOn) pureSchedule();
+  }
+
+  // ---------- beat sync ----------
+  // Microphone -> Web Audio analyser, all in this page: nothing is recorded, stored or sent. Kick/bass onsets
+  // (low-band energy flux over an adaptive threshold) give the tempo (interval histogram, 90-150 BPM, smoothed);
+  // a beat clock runs between kicks and re-syncs its phase on strong ones. No mic / no permission: a steady
+  // fallback tempo. On each beat: smooth scale/brightness pulses (never a full-screen flash).
+  var BEAT = { on: true, source: 'mic', fallback: 124, sens: .5 };
+  var bt = { bpm: 124, period: 60 / 124, next: performance.now() / 1000 + .5, last: performance.now() / 1000 - .5, src: 'fixed', conf: 0,
+    onsets: [], an: null, buf: null, lo: 2, hi: 6, prevE: 0, flux: [], lastOnset: 0, miss: 0, mic: 'idle', ctx: null, pulses: 0, log: [] };
+  var beatTest = null, beatDebug = false;
+  try {
+    var qp = new URLSearchParams(location.search);
+    var bq = Number(qp.get('beattest')); if (isFinite(bq) && bq >= 60 && bq <= 200) beatTest = bq;
+    beatDebug = qp.get('debug') === '1';
+  } catch (e) {}
+  function nowS() { return performance.now() / 1000; }
+  function beatPhase(t) { return Math.max(0, Math.min(1, (t - bt.last) / bt.period)); }   // 0 right after a pulse .. 1 at the next
+  function beatPulse() { return BEAT.on ? Math.exp(-beatPhase(nowS()) * 6) : 0; }
+  function setBpm(b) {   // tempo only; the next beat keeps its place in time (no re-basing, no extra pulse)
+    b = Math.max(90, Math.min(150, b));
+    var old = bt.period; bt.bpm = b; bt.period = 60 / b;
+    bt.next = bt.last + (bt.next - bt.last) * (bt.period / old);
+  }
+  function estimateBpm() {
+    var on = bt.onsets, hist = new Float32Array(61), i, j;
+    for (i = 0; i < on.length; i++) for (j = i + 1; j < on.length && j <= i + 4; j++) {
+      var d = on[j] - on[i]; if (d < .25 || d > 2.4) continue;
+      var b = 60 / d; while (b < 90) b *= 2; while (b > 150) b /= 2;
+      var w = 1 / (j - i);
+      for (var k = -3; k <= 3; k++) { var bin = Math.round(b) - 90 + k; if (bin >= 0 && bin <= 60) hist[bin] += w * Math.exp(-k * k / 2); }
+    }
+    var best = -1, bv = 0;
+    for (i = 0; i <= 60; i++) if (hist[i] > bv) { bv = hist[i]; best = i; }
+    if (best < 0) return null;
+    var l = best > 0 ? hist[best - 1] : 0, r = best < 60 ? hist[best + 1] : 0, den = l - 2 * bv + r;
+    return 90 + best + (den ? .5 * (l - r) / den : 0);
+  }
+  function onset(t, strength) {
+    bt.lastOnset = t; bt.onsets.push(t);
+    while (bt.onsets.length && t - bt.onsets[0] > 10) bt.onsets.shift();
+    if (bt.onsets.length >= 6) {
+      var est = estimateBpm();
+      if (est) { var k = Math.abs(est - bt.bpm) > 6 && bt.conf < .5 ? .5 : .2; setBpm(bt.bpm + (est - bt.bpm) * k); bt.conf = Math.min(1, bt.conf + .1); }
+    }
+    // phase: compare the kick with the nearest clock beat (the last pulse or the upcoming one) and nudge the next one
+    var eLast = t - bt.last, eNext = t - bt.next, err = Math.abs(eLast) < Math.abs(eNext) ? eLast : eNext;   // + = kick after the beat
+    if (Math.abs(err) < bt.period * .25) { if (strength > 1.15) bt.next += err * .35; bt.miss = 0; }
+    else if (++bt.miss > 4 && strength > 1.4) { bt.next = t + bt.period; bt.miss = 0; }   // lost: re-sync on a strong kick
+    if (bt.next - bt.last < bt.period * .6) bt.next = bt.last + bt.period * .6;   // never a pulse closer than 60 % of a beat
+  }
+  function analyse(t) {
+    bt.an.getByteFrequencyData(bt.buf);
+    var e = 0, i;
+    for (i = bt.lo; i <= bt.hi; i++) e += bt.buf[i];
+    e /= (bt.hi - bt.lo + 1);
+    var fx = Math.max(0, e - bt.prevE); bt.prevE = e;
+    bt.flux.push(fx); if (bt.flux.length > 90) bt.flux.shift();
+    var m = 0, v = 0; for (i = 0; i < bt.flux.length; i++) m += bt.flux[i]; m /= bt.flux.length;
+    for (i = 0; i < bt.flux.length; i++) v += (bt.flux[i] - m) * (bt.flux[i] - m); v = Math.sqrt(v / bt.flux.length);
+    var thr = m + (1 + (1 - BEAT.sens) * 1.6) * v;
+    if (fx > thr && fx > 4 && t - bt.lastOnset > .24) onset(t, fx / Math.max(thr, 1e-3));
+  }
+  function attach(ctx, node) {
+    var an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; an.minDecibels = -90; an.maxDecibels = -10;
+    node.connect(an);   // never connected to the speakers
+    var hz = ctx.sampleRate / an.fftSize; bt.lo = Math.max(1, Math.round(40 / hz)); bt.hi = Math.max(bt.lo + 1, Math.round(140 / hz));
+    bt.an = an; bt.buf = new Uint8Array(an.frequencyBinCount); bt.flux = []; bt.onsets = []; bt.conf = 0;
+  }
+  function beatTestSignal(bpm) {   // test only: a synthetic kick track instead of the microphone (?beattest=128)
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    var ctx = new AC(); bt.ctx = ctx; try { ctx.resume(); } catch (e) {}
+    var bus = ctx.createGain(); attach(ctx, bus);
+    var noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = noise.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    var ns = ctx.createBufferSource(); ns.buffer = noise; ns.loop = true; var ng = ctx.createGain(); ng.gain.value = .04; ns.connect(ng); ng.connect(bus); ns.start();
+    var next = ctx.currentTime + .3, per = 60 / bpm;
+    setInterval(function () {
+      while (next < ctx.currentTime + .25) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.setValueAtTime(120, next); o.frequency.exponentialRampToValueAtTime(45, next + .12);
+        g.gain.setValueAtTime(.0001, next); g.gain.exponentialRampToValueAtTime(1, next + .005); g.gain.exponentialRampToValueAtTime(.0001, next + .25);
+        o.connect(g); g.connect(bus); o.start(next); o.stop(next + .3);
+        next += per;
+      }
+    }, 40);
+    bt.src = 'test'; bt.mic = 'test';
+  }
+  function beatStartMic() {
+    if (bt.ctx && bt.ctx.state === 'suspended') { try { bt.ctx.resume(); } catch (e) {} }
+    if (bt.mic !== 'idle' || BEAT.source !== 'mic' || !BEAT.on || beatTest || MODE_VIS) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { bt.mic = 'none'; return; }
+    bt.mic = 'asking';
+    var ctx; try { ctx = new AC(); ctx.resume(); } catch (e) { bt.mic = 'none'; return; }
+    bt.ctx = ctx;
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false })
+      .then(function (stream) { attach(ctx, ctx.createMediaStreamSource(stream)); bt.src = 'mic'; bt.mic = 'on'; })
+      .catch(function () { bt.mic = 'denied'; bt.src = 'fixed'; setBpm(BEAT.fallback); try { ctx.close(); } catch (e) {} bt.ctx = null; });
+  }
+  function pulseEl(el, frames, dur) { if (el && el.animate) { try { el.animate(frames, { duration: dur, easing: 'cubic-bezier(.2,.7,.3,1)' }); } catch (e) {} } }
+  function firePulse() {
+    bt.pulses++;
+    var dur = Math.min(420, bt.period * 800), pure2 = pureOn;
+    Array.prototype.forEach.call(document.querySelectorAll('.tk-edge'), function (e) { pulseEl(e, [{ opacity: .85 }, { opacity: 0 }], dur); });
+    if (vis.on) pulseEl($('vbeat'), [{ opacity: pure2 ? .9 : .55 }, { opacity: 0 }], dur * 1.3);
+    if (!pure2 && lyCur === 'hero20') pulseEl($('big20'), [{ transform: 'scale(1.045)' }, { transform: 'scale(1)' }], dur);
+    if (!pure2 && lyCur === 'slogan') pulseEl(document.querySelector('.slg-main'), [{ transform: 'scale(1.025) skewX(-1deg)' }, { transform: 'none' }], dur);
+    Array.prototype.forEach.call(document.querySelectorAll('.tk-glow'), function (g) { pulseEl(g, [{ opacity: 1 }, { opacity: .2 }], dur); });
+    Array.prototype.forEach.call(visEl.querySelectorAll('.cr-pulse'), function (c) { pulseEl(c, [{ transform: 'scale(1.06)' }, { transform: 'scale(1)' }], dur * 1.2); });
+  }
+  var dbgT = 0;
+  function beatFrame() {
+    requestAnimationFrame(beatFrame);
+    var t = nowS();
+    if (bt.an && (!bt.ctx || bt.ctx.state === 'running')) analyse(t);
+    if (t >= bt.next) {   // exactly one pulse per beat
+      if (t - bt.last >= bt.period * .6) {
+        bt.last = t;
+        if (BEAT.on && !document.hidden) { firePulse(); if (beatDebug || beatTest) { bt.log.push(t); if (bt.log.length > 80) bt.log.shift(); } }
+      }
+      bt.next += bt.period;
+      if (bt.next <= t) bt.next = t + bt.period;   // tab was hidden / long frame: skip ahead, never burst
+    }
+    if (beatDebug && t - dbgT > .25) { dbgT = t; $('beatdbg').textContent = Math.round(bt.bpm) + ' BPM · ' + bt.src + (bt.src === 'mic' || bt.src === 'test' ? ' · ' + Math.round(bt.conf * 100) + ' %' : ''); }
+  }
+  function applyBeat(c) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) c = {};
+    var fb = (typeof c.bpm_fallback === 'number' && isFinite(c.bpm_fallback)) ? Math.max(90, Math.min(150, c.bpm_fallback)) : 124;
+    var sens = (typeof c.sensitivity === 'number' && isFinite(c.sensitivity)) ? Math.max(0, Math.min(1, c.sensitivity)) : .5;
+    var src = (c.source === 'fixed' || MODE_VIS) ? 'fixed' : 'mic';   // projector: never the mic
+    var old = BEAT; BEAT = { on: c.on !== false, source: src, fallback: fb, sens: sens };
+    if (src === 'fixed' && bt.src === 'mic') { bt.an = null; bt.src = 'fixed'; }
+    if (bt.src === 'fixed' && (fb !== old.fallback || bt.bpm !== fb)) setBpm(fb);
+  }
+  if (beatDebug) $('beatdbg').hidden = false;
+  if (beatTest) beatTestSignal(beatTest); else setBpm(BEAT.fallback);
+  if (beatDebug || beatTest) window.__beat = function () { return { bpm: +bt.bpm.toFixed(2), src: bt.src, mic: bt.mic, phase: beatPhase(nowS()), conf: bt.conf, onsets: bt.onsets.length, pulses: bt.pulses, log: bt.log.slice() }; };
+  try {   // mic already allowed for this site (e.g. after a page reload): ask again without a click; audio starts on the next click if Chrome holds it
+    if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'microphone' }).then(function (s) { if (s.state === 'granted' && !MODE_VIS) beatStartMic(); }).catch(function () {});
+  } catch (e) {}
+  requestAnimationFrame(beatFrame);
+
   // ---------- data ----------
-  var pageRev = null, lastUpdated = null;
+  var pageRev = null, hasData = false;
   function apply(j) {
+    if (j && typeof j === 'object' && !Array.isArray(j)) {
+      applyTicker(j.ticker);
+      applyVisuals(j);
+      applyLayouts(j.layouts);
+      applyWarp(j.warp);
+      applyPure(j.pure_beats);
+      applyBeat(j.beat);
+      var fi = j.flip_idle_s, nfi = (typeof fi === 'number' && isFinite(fi) && fi >= 0) ? (fi === 0 ? 0 : Math.max(5, fi)) : 25;
+      if (nfi !== flipIdleS) { flipIdleS = nfi; flapIdle(); }
+    }
     if (!j || typeof j.gathered !== 'number') throw new Error('bad gathered');
     var g = j.gathered, goal = Number(j.goal);
     if (!isFinite(g) || g < 0) throw new Error('bad gathered');
@@ -326,9 +1283,11 @@
 
     if (j.page_rev != null) {
       if (pageRev === null) pageRev = String(j.page_rev);
-      else if (String(j.page_rev) !== pageRev) { location.reload(); return; }   // Claude pushed a new tv.html: pick it up
+      else if (String(j.page_rev) !== pageRev) { location.reload(); return; }   // only a new tv.html needs this; all data and settings apply live.
+      // A reload ends click-full-screen (browser rule); F11 or Chrome --kiosk survives it (see TV-HOWTO).
     }
 
+    if (!hasData) { hasData = true; $('lyMoney').classList.remove('nodata'); }
     $('goal').textContent = eur(goal);
     if (typeof j.car === 'string' && j.car.trim()) $('car').textContent = j.car.trim();
     var p = Math.min(100, g / goal * 100);
@@ -337,25 +1296,29 @@
     tweenTo(g, goal);
     renderTops(j.top5);
     $('note').textContent = typeof j.note === 'string' ? j.note : '';
-    setLayout(j.leaderboard_on === true);
-
-    var d = j.updated_at ? new Date(j.updated_at) : null;
-    if (d && !isNaN(d.getTime())) lastUpdated = d;   // bad or missing time: keep the last good one, never the laptop clock
-    $('upd').textContent = 'posodobljeno ' + (lastUpdated ? hhmm(lastUpdated) : '–');
+    var m = $('lyMoney'), w5 = j.leaderboard_on === true;
+    if (m.classList.contains('with5') !== w5) { m.classList.toggle('with5', w5); fitAll(); }
   }
 
   function load() {
     var ctl = window.AbortController ? new AbortController() : null;
     var to = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
     return fetch('tv.json?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) { clearTimeout(to); apply(j); $('upd').classList.remove('off'); })
-      .catch(function () { clearTimeout(to); $('upd').classList.add('off'); });   // keep the last good numbers on screen
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (txt) {
+        clearTimeout(to); $('upd').classList.remove('off');   // the network is fine
+        try { apply(JSON.parse(txt)); }
+        catch (e) { try { console.warn('tv.json ignored, keeping the last good data:', e && e.message); } catch (e2) {} }   // broken file: no badge
+      })
+      .catch(function () { clearTimeout(to); $('upd').classList.add('off'); });   // no connection: keep the last good numbers on screen
   }
 
   // start: bar from zero, then the real numbers
   render(0, shown.goal);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+  flapIdle();
+  if (!MODE_VIS) lyCycle();
+  pureSchedule(true);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitAll(); fitSlogan(); });
   setTimeout(load, 400);
   setInterval(load, REFRESH_MS);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { load(); lockScreen(); } });
@@ -364,8 +1327,11 @@
   var hint = $('hint');
   function isFull() { return !!(document.fullscreenElement || document.webkitFullscreenElement) || (window.innerHeight >= screen.height - 2 && window.innerWidth >= screen.width - 2); }
   function hintCheck() { hint.classList.toggle('gone', isFull()); }
+  hintCheck();   // already full screen (F11 / kiosk): no hint at all
   setTimeout(function () { hint.classList.add('gone'); }, 12000);
   window.addEventListener('resize', hintCheck);
+  document.addEventListener('keydown', beatStartMic);
+  document.addEventListener('click', beatStartMic);
   document.addEventListener('click', function () {
     var el = document.documentElement;
     try {
