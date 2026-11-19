@@ -1,13 +1,17 @@
 {
-  "gathered": 208.08,
+  "gathered": 231.64,
   "goal": 287430,
   "car": "Porsche 911 GT3 RS",
-  "updated_at": "2026-11-17T22:57:00+01:00",
+  "updated_at": "2026-11-19T21:10:00+01:00",
   "leaderboard_on": false,
   "top5": [
     {
       "name": "Minej M.",
       "amount": 36.24
+    },
+    {
+      "name": "Junona S.",
+      "amount": 23.56
     },
     {
       "name": "Izak J.",
@@ -19,10 +23,6 @@
     },
     {
       "name": "Lev M.",
-      "amount": 15
-    },
-    {
-      "name": "Aljaž I.",
       "amount": 15
     }
   ],
