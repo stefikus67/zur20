@@ -3,7 +3,7 @@
   "goal": 287430,
   "car": "Porsche 911 GT3 RS",
   "updated_at": "2026-11-19T21:10:00+01:00",
-  "leaderboard_on": true,
+  "leaderboard_on": false,
   "top5": [
     {
       "name": "Minej M.",
@@ -129,6 +129,6 @@
     "bpm_fallback": 124,
     "sensitivity": 0.5
   },
-  "page_rev": 6,
+  "page_rev": 7,
   "screen_fit": 0.93
 }
