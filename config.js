@@ -50,7 +50,7 @@ window.RSVP_CONFIG = {
     { who: 'Nejc K.', amount: 10.02, note: '' },
     { who: 'Ema R.', amount: 15, note: '' },
     { who: 'Rok S.', amount: 20, note: '' },
-    { who: 'Junona S.', amount: 23.56, note: 'Dala sem vse, kar sem imela.' },
+    { who: 'Junona S.', amount: 23.56, note: 'i gave everything i had' },
     { who: 'Stepan', amount: 0.69, note: 'Drobiž iz žepa.' },
     { who: 'Banka', amount: 0, note: 'Kredit zavrnjen.' },
     { who: 'Mama', amount: 0, note: 'Najprej izpiti.' }
