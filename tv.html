@@ -192,8 +192,8 @@
   .v-beat { opacity: 0; will-change: opacity; background: radial-gradient(55% 35% at 50% 100%, rgba(var(--red-glow), .45), transparent 70%); }
   .beatdbg { position: absolute; left: 16px; bottom: 92px; z-index: 7; font: 600 18px/1.2 var(--ui); color: #9a9aa2;
     background: rgba(0,0,0,.6); padding: 4px 10px; border-radius: 8px; }
-  .ticker.tk-bot { bottom: 0; border-top: 2px solid var(--red); box-shadow: 0 -6px 24px rgba(var(--red-glow), .25); }
-  .ticker.tk-top { top: 0; border-bottom: 2px solid var(--red); box-shadow: 0 6px 24px rgba(var(--red-glow), .25); }
+  .ticker.tk-bot { bottom: var(--tk-inset, 0px); border-top: 2px solid var(--red); box-shadow: 0 -6px 24px rgba(var(--red-glow), .25); }
+  .ticker.tk-top { top: var(--tk-inset, 0px); border-bottom: 2px solid var(--red); box-shadow: 0 6px 24px rgba(var(--red-glow), .25); }
   .ticker.off { opacity: 0; }
   .ticker::before, .ticker::after { content: ""; position: absolute; top: 0; bottom: 0; width: 140px; z-index: 2; pointer-events: none; }
   .ticker::before { left: 0; background: linear-gradient(90deg, #000, rgba(0,0,0,0)); }
@@ -414,15 +414,15 @@
   if (LITE) stage.classList.add('lite');
 
   // ---------- fit the 1920x1080 stage to any screen ----------
-  // tv.json "screen_fit" (0.8-1, default 1) shrinks the stage so a TV's overscan does not cut the tickers; ?fit= overrides.
+  // tv.json "screen_fit" (0.8-1, default 1) moves the two ticker bands inward (full width kept) so a TV's overscan does not cut them; ?fit= overrides.
   var screenFit = 1, fitUrl = parseFloat(new URLSearchParams(location.search).get('fit'));
   function setScreenFit(v) {
     if (isFinite(fitUrl)) v = fitUrl;
     v = (typeof v === 'number' && isFinite(v)) ? Math.min(1, Math.max(0.8, v)) : 1;
-    if (v !== screenFit) { screenFit = v; fitStage(); }
+    if (v !== screenFit) { screenFit = v; stage.style.setProperty('--tk-inset', Math.round((1 - v) * 540) + 'px'); }
   }
   function fitStage() {
-    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * screenFit;
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
     stage.style.transform = 'scale(' + s + ')';
   }
   window.addEventListener('resize', fitStage);
