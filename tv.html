@@ -1132,13 +1132,207 @@
   }
 
   // ---------- beat sync ----------
-  // Microphone -> Web Audio analyser, all in this page: nothing is recorded, stored or sent. Kick/bass onsets
-  // (low-band energy flux over an adaptive threshold) give the tempo (interval histogram, 90-150 BPM, smoothed);
-  // a beat clock runs between kicks and re-syncs its phase on strong ones. No mic / no permission: a steady
-  // fallback tempo. On each beat: smooth scale/brightness pulses (never a full-screen flash).
-  var BEAT = { on: true, source: 'mic', fallback: 124, sens: .5 };
-  var bt = { bpm: 124, period: 60 / 124, next: performance.now() / 1000 + .5, last: performance.now() / 1000 - .5, src: 'fixed', conf: 0,
-    onsets: [], an: null, buf: null, lo: 2, hi: 6, prevE: 0, flux: [], lastOnset: 0, miss: 0, mic: 'idle', ctx: null, pulses: 0, log: [] };
+  // Microphone -> Web Audio analyser, all in this page: nothing is recorded, stored or sent. The detection is the pure
+  // makeBeatEngine block below; sandbox/beat-tracker/harness.js extracts that exact block from this file and tests it offline
+  // on real songs and a room recording (edit it here, then re-run the harness). No mic / no permission / no clear beat: a calm
+  // steady fallback tempo. On each beat: smooth scale/brightness pulses (never a full-screen flash).
+  var BEAT = { on: true, source: 'mic', fallback: 124, sens: .5, lead: .05 };
+  /* BEAT-ENGINE START (pure, no DOM: tv.html runs this exact block; sandbox/beat-tracker/harness.js extracts it from tv.html and tests it offline) */
+  // Spectral flux in 3 bands (kick 40-150 Hz, mid 150-3000 Hz, hi-hat 5-12 kHz) from the analyser's dB spectrum, spread onto a
+  // 100 Hz onset envelope (independent of the frame rate). Every 0.5 s: autocorrelation per band over the last 8 s, comb over
+  // 1-4 beats for 78-155 BPM, bands weighted by how periodic they are (kick counts double). A tempo locks only after 2.5 s of
+  // agreement and only if the kick or the hi-hat carries it (a voice, crowd or speech alone never locks); it switches only when
+  // a new tempo wins clearly for 3 s and holds through breaks for 16 s. Every 0.25 s the last 4 s of the kick band (else mid,
+  // else hi-hat, which may only nudge) are folded on the beat clock and its phase is pulled toward them, so pulses stay on the
+  // grid when kicks drop out. No clear beat: the clock runs calmly at the fallback tempo. CPU: ~3 ms per second of audio.
+  function makeBeatEngine(sampleRate, fftSize, opt) {
+    opt = opt || {};
+    var TH = opt.thr || .14, PERC = opt.perc == null ? .15 : opt.perc, LOCKS = opt.lockS == null ? 2.5 : opt.lockS, HOLD = opt.hold || 16, FR = 100, NW = 800, LAG = fftSize / sampleRate * .5, G = 1e4;
+    var TMIN = 78, TMAX = 155, TSTEP = .5, NT = Math.round((TMAX - TMIN) / TSTEP) + 1;
+    var LMIN = Math.floor(FR * 60 / TMAX) - 3, LMAX = Math.ceil(4 * FR * 60 / TMIN) + 3;
+    var hz = sampleRate / fftSize, NBIN = fftSize / 2;
+    var BANDS = opt.bands || [[40, 150], [150, 3000], [5000, 12000]], NAMES = ['kick', 'mid', 'hat'], NB = 3, PHMIN = 1.8, PRI = opt.pri || [2, 1, 1], THREE4 = opt.three4 == null ? .6 : opt.three4;
+    var bl = [], bh = [], b, i;
+    for (b = 0; b < NB; b++) { bl[b] = Math.max(1, Math.round(BANDS[b][0] / hz)); bh[b] = Math.max(bl[b], Math.min(NBIN - 1, Math.round(BANDS[b][1] / hz))); }
+    var KMAX = bh[NB - 1];
+    var bmean = new Float32Array(NB), bc = new Float32Array(NB), prev = new Float32Array(NBIN), havePrev = false, tPrev = -1;
+    var ring = [], x = [], ac = [], sc = [], clar = new Float32Array(NB), wts = new Float32Array(NB), fl = new Float32Array(NB);
+    for (b = 0; b < NB; b++) { ring.push(new Float32Array(NW)); x.push(new Float32Array(NW)); ac.push(new Float32Array(LMAX + 2)); sc.push(new Float32Array(NT)); }
+    var tmp = new Float32Array(NW), S = new Float32Array(NT), HB = 48, hist = new Float32Array(HB), hs = new Float32Array(HB);
+    var cell = 0, cellOn = false, cells = 0, lastUpd = -1, nUpd = 0;
+    var e = { fallback: opt.fallback || 124, sens: opt.sens == null ? .5 : opt.sens, lead: opt.lead == null ? .05 : opt.lead,
+      bpm: 0, disp: 0, period: 0, anchor: 0, last: -1, locked: false, conf: 0, raw: 0, band: '', est: 0, perc: 0, r34: 0,
+      pk: 0, phBand: -1, candT: 0, candN: 0, candS: 0, percL: 0, chalT: 0, chalN: 0, goodT: 0, phStr: 0, frames: 0 };
+    e.bpm = e.disp = e.fallback; e.period = 60 / e.bpm;
+
+    function lagAc(a, L) { var j = Math.floor(L), f = L - j; return a[j] * (1 - f) + a[j + 1] * f; }
+    function bandScore(b, P, n) {   // mean normalised autocorrelation at 1..4 beats
+      var s = 0, c = 0; for (var k = 1; k <= 4; k++) { var L = k * P; if (L > LMAX || L > n - 150) break; s += lagAc(ac[b], L); c++; }
+      return c ? s / c : 0;
+    }
+    function frame(t, db) {   // db: Float32Array dB spectrum (AnalyserNode.getFloatFrequencyData), t: seconds
+      e.frames++;
+      var dt = t - tPrev;
+      if (!havePrev || dt > .3 || dt <= 0) {   // first frame, or a stall (hidden tab): no flux across the gap
+        for (i = 1; i <= KMAX; i++) prev[i] = Math.log(1 + G * Math.exp(db[i] * .11512925));
+        havePrev = true; tPrev = t; return;
+      }
+      for (b = 0; b < NB; b++) fl[b] = 0;
+      for (b = 0; b < NB; b++) for (i = bl[b]; i <= bh[b]; i++) {
+        var c = Math.log(1 + G * Math.exp(db[i] * .11512925)), d = c - prev[i]; prev[i] = c; if (d > 0) fl[b] += d;
+      }
+      for (b = 0; b < NB; b++) fl[b] /= (bh[b] - bl[b] + 1);
+      // spread the frame's flux over the 10 ms cells its interval covers (times shifted back by the analysis lag)
+      var t0 = (tPrev - LAG) * FR, t1 = (t - LAG) * FR, c0 = Math.floor(t0), c1 = Math.floor(t1);
+      if (!cellOn) { cell = c0 - 1; cellOn = true; }
+      if (c1 - cell > NW) cell = c1 - NW;   // after a long gap: never loop over more than the ring
+      while (cell < c1) { cell++; var r = ((cell % NW) + NW) % NW; for (b = 0; b < NB; b++) ring[b][r] = 0; if (cells < NW) cells++; }
+      for (var cc = Math.max(c0, cell - NW + 1); cc <= c1; cc++) {
+        var ov = Math.min(t1, cc + 1) - Math.max(t0, cc); if (ov <= 0) continue;
+        var rr = ((cc % NW) + NW) % NW, k2 = ov / (t1 - t0);
+        for (b = 0; b < NB; b++) ring[b][rr] += fl[b] * k2;
+      }
+      tPrev = t;
+      if (t - lastUpd >= .25) { lastUpd = t; update(t); }
+    }
+    function prep(n) {   // chronological copy, minus local mean (+-0.1 s), half-wave, smoothed, z-scored into x[b]
+      var start = cell - n + 1, R = 10;
+      for (b = 0; b < NB; b++) {
+        var xb = x[b], rb = ring[b];
+        for (i = 0; i < n; i++) tmp[i] = rb[(((start + i) % NW) + NW) % NW];
+        var s = 0, lo = 0, hi = -1;
+        for (i = 0; i < n; i++) {
+          while (hi < Math.min(n - 1, i + R)) s += tmp[++hi];
+          while (lo < i - R) s -= tmp[lo++];
+          xb[i] = Math.max(0, tmp[i] - s / (hi - lo + 1));
+        }
+        for (i = 0; i < n; i++) tmp[i] = xb[i];
+        for (i = 0; i < n; i++) xb[i] = .4 * tmp[i] + .24 * ((i > 0 ? tmp[i - 1] : 0) + (i < n - 1 ? tmp[i + 1] : 0)) + .06 * ((i > 1 ? tmp[i - 2] : 0) + (i < n - 2 ? tmp[i + 2] : 0));
+        var m = 0, v = 0; for (i = 0; i < n; i++) m += xb[i]; m /= n;
+        for (i = 0; i < n; i++) v += (xb[i] - m) * (xb[i] - m); v = Math.sqrt(v / n) || 1e-9;
+        for (i = 0; i < n; i++) xb[i] = (xb[i] - m) / v;
+      }
+    }
+    function tempo(n, t) {
+      var b, k, L, j;
+      for (b = 0; b < NB; b++) {
+        var xb = x[b], a = ac[b];
+        for (L = LMIN; L <= LMAX + 1; L++) { if (L >= n - 50) { a[L] = 0; continue; } var s = 0; for (j = 0; j + L < n; j += 2) s += xb[j] * xb[j + L]; a[L] = 2 * s / (n - L); }
+        var mx = -9, mean = 0;
+        for (k = 0; k < NT; k++) { var v = bandScore(b, FR * 60 / (TMIN + k * TSTEP), n); sc[b][k] = v; mean += v; if (v > mx) mx = v; }
+        mean /= NT; clar[b] = mx - mean; bmean[b] = mean;
+      }
+      var wsum = 0; for (b = 0; b < NB; b++) { wts[b] = clar[b] > 0 ? clar[b] * clar[b] * PRI[b] : 0; wsum += wts[b]; }
+      if (wsum <= 0) { e.raw = 0; return null; }
+      var best = 0, bv = -9, sm = 0;
+      for (k = 0; k < NT; k++) {
+        var tt = TMIN + k * TSTEP, s2 = 0; for (b = 0; b < NB; b++) s2 += wts[b] * sc[b][k];
+        var lg = Math.log(tt / 120) / Math.LN2; s2 = s2 / wsum * (1 - .25 * lg * lg);   // mild prior around 120 BPM
+        S[k] = s2; sm += s2; if (s2 > bv) { bv = s2; best = k; }
+      }
+      sm /= NT;
+      var l = best > 0 ? S[best - 1] : bv, r = best < NT - 1 ? S[best + 1] : bv, den = l - 2 * bv + r;
+      var est = TMIN + (best + (den < 0 ? Math.max(-.5, Math.min(.5, .5 * (l - r) / den)) : 0)) * TSTEP;
+      if (THREE4 && est * .75 >= TMIN) {   // 2:3 trap (half-time / drum'n'bass): prefer the duple reading 3/4 of the tempo when it scores almost as well
+        var a34 = combAt(est * .75, n), a1 = combAt(est, n); e.r34 = a1 > 0 ? a34 / a1 : 0; if (a34 >= a1 * THREE4) { est = est * .75; bv = sm + (bv - sm) * (a1 > 0 ? a34 / a1 : 1); }
+      }
+      var bb = 0; for (b = 1; b < NB; b++) if (wts[b] > wts[bb]) bb = b;
+      for (b = 0; b < NB; b++) bc[b] = bandScore(b, FR * 60 / est, n) - bmean[b];
+      e.band = NAMES[bb]; e.perc = Math.max(bc[0], bc[NB - 1]); e.raw = e.perc >= PERC ? bv - sm : Math.min(bv - sm, 0);
+      return est;
+    }
+    function combAt(bpm, n) {   // weighted comb score with the tempo prior, no side effects
+      var wsum = 0, s = 0; for (var b = 0; b < NB; b++) { if (!wts[b]) continue; s += wts[b] * bandScore(b, FR * 60 / bpm, n); wsum += wts[b]; }
+      if (!wsum) return 0; var lg = Math.log(bpm / 120) / Math.LN2; return s / wsum * (1 - .25 * lg * lg);
+    }
+    function scoreAt(bpm, n) {   // combined score at an exact tempo minus the mean over all candidates
+      var wsum = 0, s = 0, sm = 0, k; for (var b = 0; b < NB; b++) { if (!wts[b]) continue; s += wts[b] * bandScore(b, FR * 60 / bpm, n); wsum += wts[b]; }
+      if (!wsum) return 0; var lg = Math.log(bpm / 120) / Math.LN2; s = s / wsum * (1 - .25 * lg * lg);
+      e.percL = Math.max(bandScore(0, FR * 60 / bpm, n) - bmean[0], bandScore(NB - 1, FR * 60 / bpm, n) - bmean[NB - 1]);
+      for (k = 0; k < NT; k++) sm += S[k]; return e.percL >= PERC ? s - sm / NT : 0;
+    }
+    function fold(b, n, P) {   // fold band b's onsets of the last 4 s on the clock; returns peak strength, peak offset in e.pk (beats)
+      var H = Math.min(n, 400), base = (cell - n + 1) / FR, j, xb = x[b];
+      for (j = 0; j < HB; j++) hist[j] = 0;
+      for (i = n - H; i < n; i++) {
+        var v = xb[i]; if (v <= 0) continue;
+        var ph = (base + (i + .5) / FR - e.anchor) / P; ph -= Math.floor(ph);
+        var w = v * Math.exp(-(n - i) / 200), fj = ph * HB, j0 = Math.floor(fj), f = fj - j0;
+        hist[j0 % HB] += w * (1 - f); hist[(j0 + 1) % HB] += w * f;
+      }
+      var mx = -1, bj = 0, sum = 0;
+      for (j = 0; j < HB; j++) { hs[j] = .25 * hist[(j + HB - 1) % HB] + .5 * hist[j] + .25 * hist[(j + 1) % HB]; sum += hs[j]; }
+      for (j = 0; j < HB; j++) if (hs[j] > mx) { mx = hs[j]; bj = j; }
+      var l = hs[(bj + HB - 1) % HB], r = hs[(bj + 1) % HB], den = l - 2 * mx + r;
+      var pk = (bj + (den < 0 ? .5 * (l - r) / den : 0)) / HB; if (pk > .5) pk -= 1;
+      e.pk = pk;
+      return sum > 0 ? mx / (sum / HB) : 0;
+    }
+    var bigT = 0, bigPk = 0;
+    function phase(n, t, snap) {   // phase from the kick if it is clear, else mid (snare/clap), else hi-hat
+      var P = e.period, pick = -1, s = 0;
+      for (var b = 0; b < NB; b++) { s = fold(b, n, P); if (s >= PHMIN) { pick = b; break; } }
+      e.phStr = s; e.phBand = pick;
+      if (pick < 0) return;
+      var pk = e.pk;
+      if (snap) { e.anchor += pk * P; bigT = 0; return; }
+      if (Math.abs(pk) < .2) { e.anchor += pk * P * .3; bigT = 0; return; }
+      if (pick === NB - 1) return;   // hi-hats alone never move the grid far (off-beat hats would flip it)
+      var d = pk - bigPk; d -= Math.round(d);
+      if (bigT && Math.abs(d) < .1) { if (t - bigT > 3) { e.anchor += pk * P; bigT = 0; } } else { bigT = t; bigPk = pk; }
+    }
+    function lockTo(bpm, n, t) {
+      e.locked = true; e.bpm = bpm; e.period = 60 / bpm; e.chalN = 0; e.goodT = t;
+      phase(n, t, true);
+    }
+    function update(t) {
+      var n = Math.min(cells, NW); nUpd++;
+      // keep the anchor near now (the grid pivots around the latest beat when the tempo moves)
+      e.anchor += Math.floor((t - e.anchor) / e.period) * e.period;
+      if (n < 300) return;
+      prep(n);
+      var thrOn = TH * (1.5 - e.sens), thrOff = thrOn * .7;
+      if (nUpd % 2 === 0 || !e.locked) {
+        var est = tempo(n, t); e.est = est || 0;
+        var conf = e.raw;
+        if (!e.locked) {
+          if (est && conf >= thrOn && n >= 400) {
+            if (e.candN && Math.abs(est - e.candT) / e.candT < .02) { e.candN++; e.candT += (est - e.candT) * .5; } else { e.candT = est; e.candN = 1; e.candS = t; }
+            if (e.candN >= 4 && t - e.candS >= LOCKS) lockTo(e.candT, n, t);
+          } else e.candN = 0;
+        } else if (est) {
+          var cl = scoreAt(e.bpm, n);
+          e.conf = Math.max(0, Math.min(1, cl / (thrOn * 2)));
+          if (cl >= thrOff) e.goodT = t;
+          if (Math.abs(est - e.bpm) / e.bpm < .03) {
+            if (conf >= thrOn) { var nb = e.bpm + (est - e.bpm) * .15; e.period = 60 / nb; e.bpm = nb; }
+            e.chalN = Math.max(0, e.chalN - 1);
+          } else if (conf >= thrOn && conf > cl * 1.25 + .01) {
+            if (e.chalN && Math.abs(est - e.chalT) / e.chalT < .025) { e.chalN++; e.chalT += (est - e.chalT) * .5; } else { e.chalT = est; e.chalN = 1; }
+            if (e.chalN >= 6) { lockTo(e.chalT, n, t); }
+          } else e.chalN = Math.max(0, e.chalN - 1);
+          if (t - e.goodT > HOLD) { e.locked = false; e.bpm = e.fallback; e.period = 60 / e.bpm; e.candN = 0; }
+        }
+        if (!e.locked) e.conf = Math.max(0, Math.min(1, conf / (thrOn * 2)));
+      }
+      if (e.locked && t - e.goodT < 3) phase(n, t, false);
+      if (!e.locked) e.disp = Math.round(e.fallback);
+      else if (Math.abs(e.bpm - e.disp) >= .6) e.disp = Math.round(e.bpm);
+    }
+    function tick(t) {   // true = fire a pulse now (one per beat, never closer than 60 % of a beat, early by e.lead)
+      var P = e.period, g0 = e.anchor - e.lead, from = e.last + P * .6;
+      var nxt = g0 + Math.ceil((from - g0) / P) * P;
+      if (t >= nxt) { e.last = t; return true; }
+      return false;
+    }
+    function setFallback(fb) { e.fallback = fb; if (!e.locked) { e.bpm = fb; e.period = 60 / fb; e.disp = Math.round(fb); } }
+    function reset() { e.locked = false; e.candN = 0; e.chalN = 0; cells = 0; cellOn = false; havePrev = false; e.conf = 0; e.raw = 0; e.band = ''; setFallback(e.fallback); }
+    e.bc = bc; e.frame = frame; e.tick = tick; e.setFallback = setFallback; e.reset = reset;
+    return e;
+  }
+  /* BEAT-ENGINE END */
+  var bt = { bpm: 124, period: 60 / 124, last: -1, src: 'fixed', conf: 0, an: null, buf: null, mic: 'idle', ctx: null, pulses: 0, log: [],
+    eng: makeBeatEngine(48000, 2048, { fallback: 124, sens: .5 }) };
   var beatTest = null, beatDebug = false;
   try {
     var qp = new URLSearchParams(location.search);
@@ -1148,55 +1342,12 @@
   function nowS() { return performance.now() / 1000; }
   function beatPhase(t) { return Math.max(0, Math.min(1, (t - bt.last) / bt.period)); }   // 0 right after a pulse .. 1 at the next
   function beatPulse() { return BEAT.on ? Math.exp(-beatPhase(nowS()) * 6) : 0; }
-  function setBpm(b) {   // tempo only; the next beat keeps its place in time (no re-basing, no extra pulse)
-    b = Math.max(90, Math.min(150, b));
-    var old = bt.period; bt.bpm = b; bt.period = 60 / b;
-    bt.next = bt.last + (bt.next - bt.last) * (bt.period / old);
-  }
-  function estimateBpm() {
-    var on = bt.onsets, hist = new Float32Array(61), i, j;
-    for (i = 0; i < on.length; i++) for (j = i + 1; j < on.length && j <= i + 4; j++) {
-      var d = on[j] - on[i]; if (d < .25 || d > 2.4) continue;
-      var b = 60 / d; while (b < 90) b *= 2; while (b > 150) b /= 2;
-      var w = 1 / (j - i);
-      for (var k = -3; k <= 3; k++) { var bin = Math.round(b) - 90 + k; if (bin >= 0 && bin <= 60) hist[bin] += w * Math.exp(-k * k / 2); }
-    }
-    var best = -1, bv = 0;
-    for (i = 0; i <= 60; i++) if (hist[i] > bv) { bv = hist[i]; best = i; }
-    if (best < 0) return null;
-    var l = best > 0 ? hist[best - 1] : 0, r = best < 60 ? hist[best + 1] : 0, den = l - 2 * bv + r;
-    return 90 + best + (den ? .5 * (l - r) / den : 0);
-  }
-  function onset(t, strength) {
-    bt.lastOnset = t; bt.onsets.push(t);
-    while (bt.onsets.length && t - bt.onsets[0] > 10) bt.onsets.shift();
-    if (bt.onsets.length >= 6) {
-      var est = estimateBpm();
-      if (est) { var k = Math.abs(est - bt.bpm) > 6 && bt.conf < .5 ? .5 : .2; setBpm(bt.bpm + (est - bt.bpm) * k); bt.conf = Math.min(1, bt.conf + .1); }
-    }
-    // phase: compare the kick with the nearest clock beat (the last pulse or the upcoming one) and nudge the next one
-    var eLast = t - bt.last, eNext = t - bt.next, err = Math.abs(eLast) < Math.abs(eNext) ? eLast : eNext;   // + = kick after the beat
-    if (Math.abs(err) < bt.period * .25) { if (strength > 1.15) bt.next += err * .35; bt.miss = 0; }
-    else if (++bt.miss > 4 && strength > 1.4) { bt.next = t + bt.period; bt.miss = 0; }   // lost: re-sync on a strong kick
-    if (bt.next - bt.last < bt.period * .6) bt.next = bt.last + bt.period * .6;   // never a pulse closer than 60 % of a beat
-  }
-  function analyse(t) {
-    bt.an.getByteFrequencyData(bt.buf);
-    var e = 0, i;
-    for (i = bt.lo; i <= bt.hi; i++) e += bt.buf[i];
-    e /= (bt.hi - bt.lo + 1);
-    var fx = Math.max(0, e - bt.prevE); bt.prevE = e;
-    bt.flux.push(fx); if (bt.flux.length > 90) bt.flux.shift();
-    var m = 0, v = 0; for (i = 0; i < bt.flux.length; i++) m += bt.flux[i]; m /= bt.flux.length;
-    for (i = 0; i < bt.flux.length; i++) v += (bt.flux[i] - m) * (bt.flux[i] - m); v = Math.sqrt(v / bt.flux.length);
-    var thr = m + (1 + (1 - BEAT.sens) * 1.6) * v;
-    if (fx > thr && fx > 4 && t - bt.lastOnset > .24) onset(t, fx / Math.max(thr, 1e-3));
-  }
   function attach(ctx, node) {
-    var an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; an.minDecibels = -90; an.maxDecibels = -10;
+    var an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0;
     node.connect(an);   // never connected to the speakers
-    var hz = ctx.sampleRate / an.fftSize; bt.lo = Math.max(1, Math.round(40 / hz)); bt.hi = Math.max(bt.lo + 1, Math.round(140 / hz));
-    bt.an = an; bt.buf = new Uint8Array(an.frequencyBinCount); bt.flux = []; bt.onsets = []; bt.conf = 0;
+    var old = bt.eng, eng = makeBeatEngine(ctx.sampleRate, an.fftSize, { fallback: BEAT.fallback, sens: BEAT.sens, lead: BEAT.lead });
+    eng.anchor = old.anchor; eng.last = old.last;   // the running pulse clock continues without a hiccup
+    bt.eng = eng; bt.an = an; bt.buf = new Float32Array(an.frequencyBinCount);
   }
   function beatTestSignal(bpm) {   // test only: a synthetic kick track instead of the microphone (?beattest=128)
     var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -1227,7 +1378,7 @@
     bt.ctx = ctx;
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false })
       .then(function (stream) { attach(ctx, ctx.createMediaStreamSource(stream)); bt.src = 'mic'; bt.mic = 'on'; })
-      .catch(function () { bt.mic = 'denied'; bt.src = 'fixed'; setBpm(BEAT.fallback); try { ctx.close(); } catch (e) {} bt.ctx = null; });
+      .catch(function () { bt.mic = 'denied'; bt.src = 'fixed'; bt.eng.reset(); try { ctx.close(); } catch (e) {} bt.ctx = null; });
   }
   function pulseEl(el, frames, dur) { if (el && el.animate) { try { el.animate(frames, { duration: dur, easing: 'cubic-bezier(.2,.7,.3,1)' }); } catch (e) {} } }
   function firePulse() {
@@ -1243,30 +1394,28 @@
   var dbgT = 0;
   function beatFrame() {
     requestAnimationFrame(beatFrame);
-    var t = nowS();
-    if (bt.an && (!bt.ctx || bt.ctx.state === 'running')) analyse(t);
-    if (t >= bt.next) {   // exactly one pulse per beat
-      if (t - bt.last >= bt.period * .6) {
-        bt.last = t;
-        if (BEAT.on && !document.hidden) { firePulse(); if (beatDebug || beatTest) { bt.log.push(t); if (bt.log.length > 80) bt.log.shift(); } }
-      }
-      bt.next += bt.period;
-      if (bt.next <= t) bt.next = t + bt.period;   // tab was hidden / long frame: skip ahead, never burst
+    var t = nowS(), eng = bt.eng;
+    if (bt.an && (!bt.ctx || bt.ctx.state === 'running')) { bt.an.getFloatFrequencyData(bt.buf); eng.frame(t, bt.buf); }
+    if (eng.tick(t) && BEAT.on && !document.hidden) {   // exactly one pulse per beat
+      firePulse(); if (beatDebug || beatTest) { bt.log.push(t); if (bt.log.length > 80) bt.log.shift(); }
     }
-    if (beatDebug && t - dbgT > .25) { dbgT = t; $('beatdbg').textContent = Math.round(bt.bpm) + ' BPM · ' + bt.src + (bt.src === 'mic' || bt.src === 'test' ? ' · ' + Math.round(bt.conf * 100) + ' %' : ''); }
+    bt.bpm = eng.bpm; bt.period = eng.period; bt.last = eng.last; bt.conf = eng.conf;
+    if (beatDebug && t - dbgT > .25) { dbgT = t; $('beatdbg').textContent = eng.disp + ' BPM · ' + bt.src + (bt.src === 'mic' || bt.src === 'test' ? ' · ' + (eng.locked ? eng.band : 'listening') + ' · ' + Math.round(eng.conf * 100) + ' %' : ''); }
   }
   function applyBeat(c) {
     if (!c || typeof c !== 'object' || Array.isArray(c)) c = {};
     var fb = (typeof c.bpm_fallback === 'number' && isFinite(c.bpm_fallback)) ? Math.max(90, Math.min(150, c.bpm_fallback)) : 124;
     var sens = (typeof c.sensitivity === 'number' && isFinite(c.sensitivity)) ? Math.max(0, Math.min(1, c.sensitivity)) : .5;
+    var lead = (typeof c.lead_ms === 'number' && isFinite(c.lead_ms)) ? Math.max(0, Math.min(200, c.lead_ms)) / 1000 : .05;
     var src = (c.source === 'fixed' || MODE_VIS) ? 'fixed' : 'mic';   // projector: never the mic
-    var old = BEAT; BEAT = { on: c.on !== false, source: src, fallback: fb, sens: sens };
-    if (src === 'fixed' && bt.src === 'mic') { bt.an = null; bt.src = 'fixed'; }
-    if (bt.src === 'fixed' && (fb !== old.fallback || bt.bpm !== fb)) setBpm(fb);
+    var old = BEAT; BEAT = { on: c.on !== false, source: src, fallback: fb, sens: sens, lead: lead };
+    bt.eng.sens = sens; bt.eng.lead = lead;
+    if (src === 'fixed' && bt.src === 'mic') { bt.an = null; bt.src = 'fixed'; bt.eng.reset(); }
+    if (fb !== old.fallback || !bt.eng.locked) bt.eng.setFallback(fb);
   }
   if (beatDebug) $('beatdbg').hidden = false;
-  if (beatTest) beatTestSignal(beatTest); else setBpm(BEAT.fallback);
-  if (beatDebug || beatTest) window.__beat = function () { return { bpm: +bt.bpm.toFixed(2), src: bt.src, mic: bt.mic, phase: beatPhase(nowS()), conf: bt.conf, onsets: bt.onsets.length, pulses: bt.pulses, log: bt.log.slice() }; };
+  if (beatTest) beatTestSignal(beatTest);
+  if (beatDebug || beatTest) window.__beat = function () { var g = bt.eng; return { bpm: +g.bpm.toFixed(2), disp: g.disp, src: bt.src, mic: bt.mic, phase: beatPhase(nowS()), conf: g.conf, locked: g.locked, band: g.band, est: g.est, pulses: bt.pulses, log: bt.log.slice() }; };
   try {   // mic already allowed for this site (e.g. after a page reload): ask again without a click; audio starts on the next click if Chrome holds it
     if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'microphone' }).then(function (s) { if (s.state === 'granted' && !MODE_VIS) beatStartMic(); }).catch(function () {});
   } catch (e) {}
