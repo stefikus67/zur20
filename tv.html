@@ -414,12 +414,20 @@
   if (LITE) stage.classList.add('lite');
 
   // ---------- fit the 1920x1080 stage to any screen ----------
+  // tv.json "screen_fit" (0.8-1, default 1) shrinks the stage so a TV's overscan does not cut the tickers; ?fit= overrides.
+  var screenFit = 1, fitUrl = parseFloat(new URLSearchParams(location.search).get('fit'));
+  function setScreenFit(v) {
+    if (isFinite(fitUrl)) v = fitUrl;
+    v = (typeof v === 'number' && isFinite(v)) ? Math.min(1, Math.max(0.8, v)) : 1;
+    if (v !== screenFit) { screenFit = v; fitStage(); }
+  }
   function fitStage() {
-    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * screenFit;
     stage.style.transform = 'scale(' + s + ')';
   }
   window.addEventListener('resize', fitStage);
   fitStage();
+  if (isFinite(fitUrl)) setScreenFit(fitUrl);
 
   // ---------- formatting (same as the invite) ----------
   function eur(n) {
@@ -1272,6 +1280,7 @@
       applyWarp(j.warp);
       applyPure(j.pure_beats);
       applyBeat(j.beat);
+      setScreenFit(j.screen_fit);
       var fi = j.flip_idle_s, nfi = (typeof fi === 'number' && isFinite(fi) && fi >= 0) ? (fi === 0 ? 0 : Math.max(5, fi)) : 25;
       if (nfi !== flipIdleS) { flipIdleS = nfi; flapIdle(); }
     }
