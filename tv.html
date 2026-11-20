@@ -247,7 +247,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.45'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); }
   @keyframes vgrain { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-120px, 95px, 0); } }
 
-  .vis .sc { inset: 0; animation: scin 2.6s cubic-bezier(.45,0,.25,1) both; transition: opacity 3.2s cubic-bezier(.45,0,.25,1); }
+  .vis .sc { inset: 0; animation: scin 2.6s cubic-bezier(.45,0,.25,1) backwards; transition: opacity 3.2s cubic-bezier(.45,0,.25,1); }
   .vis .sc.out { opacity: 0; }
   @keyframes scin { from { opacity: 0; } }
 
