@@ -58,7 +58,7 @@
      Content lives between the two ticker bands (y 84-996). One layout is shown at a time (.on), the others are
      faded out and their animations paused. The party is the hero; the money layout is one of several. */
   .ly { position: absolute; left: 0; right: 0; top: 84px; bottom: 84px; z-index: 2; opacity: 0; pointer-events: none;
-    transition: opacity .9s ease; }
+    transition: opacity 1.8s cubic-bezier(.45,0,.25,1); }
   .ly.on { opacity: 1; }
   .ly:not(.on) * { animation-play-state: paused !important; }
 
@@ -247,7 +247,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.45'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); }
   @keyframes vgrain { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-120px, 95px, 0); } }
 
-  .vis .sc { inset: 0; animation: scin 1.6s ease both; transition: opacity 2s ease; }
+  .vis .sc { inset: 0; animation: scin 2.6s cubic-bezier(.45,0,.25,1) both; transition: opacity 3.2s cubic-bezier(.45,0,.25,1); }
   .vis .sc.out { opacity: 0; }
   @keyframes scin { from { opacity: 0; } }
 
@@ -1057,7 +1057,7 @@
       var loop = function (ts) { if (!el.parentNode) return; if (t0 === null) t0 = ts; s.cv(ctx, (ts - t0) / 1000); requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
     }
-    setTimeout(function () { el.classList.add('out'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2100); }, s.dur);
+    setTimeout(function () { el.classList.add('out'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 3400); }, s.dur);
     return s.dur;
   }
   function initDrift(el, dur) {   // small chrome roses float across the dark, each on its own slow path
@@ -1083,7 +1083,7 @@
       if (!visForced && i === visLast) i = (i + 1 + Math.floor(Math.random() * (SCENES.length - 1))) % SCENES.length;
       visLast = i;
       var dur = visPlay(i);
-      visT = setTimeout(function () { visSchedule(); }, dur + ((lyCur === 'show' || pureOn || MODE_VIS) ? 400 : 2200));   // the pause starts after the scene
+      visT = setTimeout(function () { visSchedule(); }, (lyCur === 'show' || pureOn || MODE_VIS) ? Math.max(1000, dur - 1200) : dur + 2200);   // full-screen: the next scene starts fading in while this one fades out (crossfade); behind layouts: a pause
     }, wait);
   }
   function visNow() { if (vis && !visActive()) visSchedule('now'); }
