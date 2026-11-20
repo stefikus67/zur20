@@ -106,10 +106,10 @@
     "pin": ""
   },
   "visuals_on": true,
-  "visuals_every_s": 45,
+  "visuals_every_s": 30,
   "flip_idle_s": 25,
   "warp": {
-    "on": false,
+    "on": true,
     "intensity": 0.6
   },
   "pure_beats": {
