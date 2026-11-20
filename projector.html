@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Žur 20 · projektor</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&display=swap">
+<style>
+  /* Projector page: pure black everywhere (black = no light from the projector), one soft-edged circle of light art. */
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; cursor: none; }
+  #cv { position: absolute; left: 50%; top: 50%; display: block; background: #000; }
+  #dbg { position: fixed; left: 8px; bottom: 8px; font: 12px/1.3 monospace; color: #888; display: none; }
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="Svetlobna animacija za projektor"></canvas>
+<div id="dbg"></div>
+<script>
+(function () {
+  'use strict';
+  // URL: ?r=0.6..1 circle size (share of the shorter side), ?mic=1 gentle swell on a locked beat, ?scene=1..5 stay on one scene,
+  // ?lite=1 lower resolution, ?debug=1 fps readout. Default: free-running, no mic, no rhythm.
+  var Q = new URLSearchParams(location.search);
+  var R = parseFloat(Q.get('r')); R = isFinite(R) ? Math.min(1, Math.max(.6, R)) : .96;
+  var MIC = Q.get('mic') === '1', LITE = Q.get('lite') === '1', DEBUG = Q.get('debug') === '1';
+  var DUR = parseFloat(Q.get('dur')); DUR = isFinite(DUR) ? Math.max(8, Math.min(300, DUR)) : 0;   // ?dur=s test: fixed scene length
+  var FORCE = /^[1-5]$/.test(Q.get('scene') || '') ? Number(Q.get('scene')) - 1 : -1;
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var dbg = document.getElementById('dbg'); if (DEBUG) dbg.style.display = 'block';
+
+  // ---------- sizes: main canvas = the circle's box only; work canvases at a capped resolution ----------
+  var CAP = LITE ? 480 : 720, S = 0, D = 0;
+  function mk(n) { var c = document.createElement('canvas'); c.width = c.height = n; return c; }
+  var scr = mk(8), comp = mk(8), sx = scr.getContext('2d'), cx = comp.getContext('2d');
+  var kal = mk(8), kx = kal.getContext('2d');
+  function resize() {
+    D = Math.floor(Math.min(window.innerWidth, window.innerHeight) * R);
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var n = Math.max(240, Math.min(CAP, Math.round(D * dpr)));
+    S = n;
+    cv.width = cv.height = n; cv.style.width = cv.style.height = D + 'px';
+    cv.style.marginLeft = cv.style.marginTop = (-D / 2) + 'px';
+    [scr, comp, kal].forEach(function (c) { c.width = c.height = n; });
+    makeMask();
+  }
+
+  // ---------- sprites (chrome rose + petals, same drawing as tv.html) ----------
+  function chromeGrad(c, x0, y0, x1, y1, lit) {
+    var g = c.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgb(18,18,22)');
+    g.addColorStop(.35, 'rgb(' + [Math.round(90 * lit), Math.round(90 * lit), Math.round(98 * lit)] + ')');
+    g.addColorStop(.55, 'rgb(' + [Math.round(245 * lit), Math.round(245 * lit), Math.round(250 * lit)] + ')');
+    g.addColorStop(.7, 'rgb(' + [Math.round(120 * lit), Math.round(120 * lit), Math.round(128 * lit)] + ')');
+    g.addColorStop(1, 'rgb(' + [Math.round(220 * lit), Math.round(220 * lit), Math.round(228 * lit)] + ')');
+    return g;
+  }
+  function petalPath(c, l, w) {
+    c.beginPath(); c.moveTo(0, 0);
+    c.bezierCurveTo(w, -l * .3, w * .9, -l * .85, 0, -l);
+    c.bezierCurveTo(-w * .9, -l * .85, -w, -l * .3, 0, 0);
+  }
+  function chromePetal(c, l, w, lit) {
+    petalPath(c, l, w);
+    c.fillStyle = chromeGrad(c, -w, -l * .2, w * .7, -l, lit); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.65)'; c.lineWidth = Math.max(1, l * .018); c.stroke();
+    c.beginPath(); c.moveTo(-w * .55, -l * .78); c.quadraticCurveTo(0, -l * 1.02, w * .55, -l * .78);
+    c.strokeStyle = 'rgba(255,255,255,' + (.55 * lit) + ')'; c.lineWidth = Math.max(1, l * .03); c.stroke();
+  }
+  function makeRose(size) {
+    var c = mk(size), x = c.getContext('2d'), N = 46, m = size / 2;
+    var halo = x.createRadialGradient(m, m, 0, m, m, m);
+    halo.addColorStop(0, 'rgba(255,255,255,.10)'); halo.addColorStop(.6, 'rgba(255,255,255,.03)'); halo.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = halo; x.fillRect(0, 0, size, size);
+    for (var i = N - 1; i >= 0; i--) {
+      var t = i / (N - 1), ang = i * 2.39996, r = size * (.03 + t * .2), l = size * (.1 + t * .27);
+      x.save(); x.translate(m + Math.cos(ang) * r * .5, m + Math.sin(ang) * r * .5); x.rotate(ang + Math.PI / 2);
+      chromePetal(x, l, l * (.75 + .15 * Math.sin(i)), .55 + .45 * (1 - t) * (.6 + .4 * Math.sin(i * 1.7)));
+      x.restore();
+    }
+    x.beginPath();
+    for (var k = 0; k < 220; k++) { var a2 = k * .13, rr = size * .004 * k * .12; x.lineTo(m + Math.cos(a2) * rr, m + Math.sin(a2) * rr); }
+    x.strokeStyle = 'rgba(0,0,0,.7)'; x.lineWidth = size * .006; x.stroke();
+    return c;
+  }
+  function makePetal(w, h, tint) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d'); x.translate(w / 2, h - 2);
+    chromePetal(x, h - 4, w * .46, 1);
+    if (tint) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = tint; x.fillRect(0, 0, w, h); }
+    return c;
+  }
+  function make20(size) {   // the big "20" with its glow, drawn once
+    var c = mk(size), x = c.getContext('2d'), m = size / 2;
+    x.font = '800 ' + Math.round(size * .42) + 'px Unbounded, "Arial Black", sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    var g = x.createLinearGradient(0, m - size * .2, 0, m + size * .2);
+    g.addColorStop(0, '#ffb347'); g.addColorStop(.45, '#ff3a4c'); g.addColorStop(1, '#a8001a');
+    x.shadowColor = 'rgba(224,0,27,.9)'; x.shadowBlur = size * .06;
+    x.fillStyle = g; x.fillText('20', m, m + size * .02);
+    x.shadowBlur = 0; x.lineWidth = Math.max(1, size * .004); x.strokeStyle = 'rgba(255,220,180,.55)'; x.strokeText('20', m, m + size * .02);
+    return c;
+  }
+  var ROSE = makeRose(LITE ? 400 : 640);
+  var PET = { w: makePetal(90, 120), r: makePetal(90, 120, 'rgba(255,30,40,.85)'), a: makePetal(90, 120, 'rgba(255,150,30,.8)'),
+    p: makePetal(90, 120, 'rgba(255,60,160,.8)'), g: makePetal(90, 120, 'rgba(255,205,80,.8)') };
+  var TWENTY = make20(512);
+  function remake20() { TWENTY = make20(512); }
+  if (document.fonts && document.fonts.load) document.fonts.load('800 100px Unbounded').then(remake20).catch(function () {});
+
+  // ---------- palette drift (red -> amber -> gold -> pink, slow) ----------
+  var PAL = [[224, 0, 27], [255, 120, 20], [255, 190, 70], [255, 50, 140], [200, 0, 60]];
+  function palAt(u) {   // u: any real number, wraps
+    u = ((u % PAL.length) + PAL.length) % PAL.length;
+    var i = Math.floor(u), f = u - i, a = PAL[i], b = PAL[(i + 1) % PAL.length], s = f * f * (3 - 2 * f);
+    return [Math.round(a[0] + (b[0] - a[0]) * s), Math.round(a[1] + (b[1] - a[1]) * s), Math.round(a[2] + (b[2] - a[2]) * s)];
+  }
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+
+  // ---------- scenes: each draws a full S x S frame (black background) into x at time t ----------
+  function glow(x, px, py, rad, col, a) {
+    var g = x.createRadialGradient(px, py, 0, px, py, rad);
+    g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+    x.fillStyle = g; x.fillRect(px - rad, py - rad, rad * 2, rad * 2);
+  }
+  var SCENES = [
+    { name: 'Rose bloom', draw: function (x, t, sw) {   // one big chrome rose turning slowly, a red flare circling it
+      var m = S / 2, col = palAt(t * .02);
+      glow(x, m, m, S * .55, col, .35 + .1 * Math.sin(t * .21));
+      x.save(); x.translate(m, m); x.rotate(t * .1); var k = S * .82 * (1 + .04 * Math.sin(t * .23) + sw * .03);
+      x.drawImage(ROSE, -k / 2, -k / 2, k, k); x.restore();
+      x.globalCompositeOperation = 'lighter';
+      x.save(); x.translate(m, m); x.rotate(-t * .07); x.globalAlpha = .16; var k2 = S * 1.05;
+      x.drawImage(ROSE, -k2 / 2, -k2 / 2, k2, k2); x.restore(); x.globalAlpha = 1;
+      var fa = t * .19;
+      glow(x, m + Math.cos(fa) * S * .28, m + Math.sin(fa * 1.3) * S * .24, S * .22, [255, 40, 50], .55);
+      glow(x, m + Math.cos(-fa * .7 + 2) * S * .3, m + Math.sin(-fa * .9 + 1) * S * .26, S * .16, [255, 170, 60], .3);
+      x.globalCompositeOperation = 'source-over';
+    } },
+    { name: 'Petal vortex', draw: function (x, t, sw) {   // petals spiral into the centre, warm colour fringes split and close slowly
+      var m = S / 2, N = LITE ? 26 : 44, spin = t * .22, split = S * (.006 + .005 * Math.sin(t * .31));
+      glow(x, m, m, S * .5, palAt(t * .025 + 1), .28);
+      var passes = LITE ? [[PET.r, split, 0, .5, 'lighter'], [PET.w, 0, 0, .9, 'source-over']]
+        : [[PET.r, split, 0, .5, 'lighter'], [PET.a, 0, split * .7, .35, 'lighter'], [PET.p, -split, -split * .3, .45, 'lighter'], [PET.w, 0, 0, .9, 'source-over']];
+      var sc0 = S / 540;
+      for (var pI = 0; pI < passes.length; pI++) {
+        var P = passes[pI]; x.globalCompositeOperation = P[4];
+        for (var i = 0; i < N; i++) {
+          var u = ((i / N) + t * .04) % 1, rr = S * .56 * Math.pow(1 - u, 1.4), ang = i * 2.39996 + spin + u * 5;
+          var sc = (.12 + (1 - u) * 1.1) * sc0 * (1 + sw * .05), a = P[3] * Math.sin(Math.PI * u);
+          var px = m + Math.cos(ang) * rr + P[1], py = m + Math.sin(ang) * rr + P[2], rot = ang + Math.PI / 2 + u * 1.5;
+          var c = Math.cos(rot) * sc, s = Math.sin(rot) * sc;
+          x.globalAlpha = a; x.setTransform(c, s, -s, c, px, py); x.drawImage(P[0], -45, -118);
+        }
+      }
+      x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+    } },
+    { name: 'Kaleidoscope', draw: function (x, t, sw) {   // drifting petals + a rose, mirrored into 10 slices, turning
+      var m = S / 2, N = LITE ? 8 : 10, w = Math.PI * 2 / N;
+      kx.setTransform(1, 0, 0, 1, 0, 0); kx.globalCompositeOperation = 'source-over'; kx.fillStyle = '#000'; kx.fillRect(0, 0, S, S);
+      var col = palAt(t * .03 + 2); glow(kx, m + S * .25, m, S * .35, col, .5);
+      kx.save(); kx.translate(m + S * (.22 + .06 * Math.sin(t * .13)), m + S * .05 * Math.sin(t * .17)); kx.rotate(t * .15);
+      var k = S * .42; kx.drawImage(ROSE, -k / 2, -k / 2, k, k); kx.restore();
+      var tints = [PET.r, PET.a, PET.p, PET.g, PET.w], sc0 = S / 540;
+      kx.globalCompositeOperation = 'lighter';
+      for (var i = 0; i < (LITE ? 6 : 10); i++) {
+        var u = (t * (.025 + i * .003) + i * .37) % 1, ang = i * 1.7 + t * .05;
+        var px = m + S * (.05 + .45 * u) * Math.cos(ang * .3), py = m + S * .18 * Math.sin(ang + u * 4);
+        var sc = (.5 + .5 * Math.sin(u * Math.PI)) * sc0 * .9, rot = ang + u * 3;
+        kx.globalAlpha = .75 * Math.sin(u * Math.PI);
+        kx.setTransform(Math.cos(rot) * sc, Math.sin(rot) * sc, -Math.sin(rot) * sc, Math.cos(rot) * sc, px, py);
+        kx.drawImage(tints[i % tints.length], -45, -118);
+      }
+      kx.setTransform(1, 0, 0, 1, 0, 0); kx.globalAlpha = 1; kx.globalCompositeOperation = 'source-over';
+      var rot0 = t * .045;
+      for (var j = 0; j < N; j++) {
+        x.save(); x.translate(m, m); x.rotate(rot0 + j * w); if (j % 2) x.scale(1, -1);
+        x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, m * 1.02, -w / 2 - .004, w / 2 + .004); x.closePath(); x.clip();
+        x.drawImage(kal, -m, -m); x.restore();
+      }
+    } },
+    { name: 'Laser 20', draw: function (x, t, sw) {   // slow red laser fan from the centre, rings drifting out, the big 20 breathing
+      var m = S / 2, NR = LITE ? 10 : 16, col = palAt(t * .02 + 3);
+      glow(x, m, m, S * .5, [224, 0, 27], .25);
+      x.globalCompositeOperation = 'lighter';
+      for (var i = 0; i < NR; i++) {
+        var a = t * .06 + i * Math.PI * 2 / NR + .25 * Math.sin(t * .11 + i);
+        var g = x.createLinearGradient(m, m, m + Math.cos(a) * m, m + Math.sin(a) * m);
+        g.addColorStop(0, rgba(i % 3 ? [255, 40, 50] : col, .55)); g.addColorStop(1, 'rgba(255,0,30,0)');
+        x.fillStyle = g; x.beginPath(); x.moveTo(m, m);
+        x.lineTo(m + Math.cos(a - .018) * m * 1.1, m + Math.sin(a - .018) * m * 1.1);
+        x.lineTo(m + Math.cos(a + .018) * m * 1.1, m + Math.sin(a + .018) * m * 1.1); x.closePath(); x.fill();
+      }
+      for (var r = 0; r < 4; r++) {   // irregular, unhurried rings (no fixed period)
+        var u = (t * (.045 + r * .007) + r * .29) % 1;
+        x.strokeStyle = rgba(r % 2 ? col : [255, 58, 76], .5 * (1 - u)); x.lineWidth = S * (.004 + .01 * (1 - u));
+        x.beginPath(); x.arc(m, m, S * (.08 + .45 * u), 0, Math.PI * 2); x.stroke();
+      }
+      x.globalCompositeOperation = 'source-over';
+      x.save(); x.translate(m, m); x.rotate(.12 * Math.sin(t * .09)); var k = S * .7 * (1 + .03 * Math.sin(t * .27) + sw * .03);
+      x.drawImage(TWENTY, -k / 2, -k / 2, k, k); x.restore();
+    } },
+    { name: 'Liquid rings', draw: function (x, t, sw) {   // concentric rings with slow organic warps, colours drifting
+      var m = S / 2, K = LITE ? 9 : 14, P = 72;
+      glow(x, m, m, S * .5, palAt(t * .02 + 4), .22);
+      x.globalCompositeOperation = 'lighter';
+      for (var k = 0; k < K; k++) {
+        var base = S * (.06 + k * .44 / K), n = 3 + (k % 4), amp = S * (.012 + .02 * Math.sin(t * .13 + k));
+        x.beginPath();
+        for (var i = 0; i <= P; i++) {
+          var th = i / P * Math.PI * 2, rr = base + amp * Math.sin(n * th + t * (.25 + k * .03) * (k % 2 ? 1 : -1)) + S * .01 * Math.sin(2 * th - t * .17);
+          if (i) x.lineTo(m + Math.cos(th) * rr, m + Math.sin(th) * rr); else x.moveTo(m + Math.cos(th) * rr, m + Math.sin(th) * rr);
+        }
+        x.strokeStyle = rgba(palAt(t * .03 + k * .35), .55); x.lineWidth = S * (.006 + .004 * Math.sin(t * .2 + k)) * (1 + sw * .3); x.stroke();
+      }
+      x.globalCompositeOperation = 'source-over';
+      x.save(); x.translate(m, m); x.rotate(-t * .05); x.globalAlpha = .55; var kk = S * .3;
+      x.drawImage(ROSE, -kk / 2, -kk / 2, kk, kk); x.restore(); x.globalAlpha = 1;
+    } }
+  ];
+
+  // ---------- feathered circle mask, built once per size ----------
+  var mask = null;
+  function makeMask() {
+    mask = mk(S); var x = mask.getContext('2d'), m = S / 2;
+    var g = x.createRadialGradient(m, m, 0, m, m, m);
+    g.addColorStop(0, '#fff'); g.addColorStop(.8, '#fff'); g.addColorStop(.93, 'rgba(255,255,255,.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+  }
+
+  // ---------- schedule: 45-60 s per scene, 5 s crossfades, never the same twice in a row ----------
+  var cur = FORCE >= 0 ? FORCE : Math.floor(Math.random() * SCENES.length), nxt = -1, tSw = 0, dur = DUR || 50, FADE = 5;
+  function pickNext() { var i; do { i = Math.floor(Math.random() * SCENES.length); } while (i === cur && SCENES.length > 1); return i; }
+
+  // ---------- optional mic swell (?mic=1): the tv.html beat engine, only on a stable lock ----------
+  /* BEAT-ENGINE START (pure, no DOM: tv.html runs this exact block; sandbox/beat-tracker/harness.js extracts it from tv.html and tests it offline) */
+  // Spectral flux in 3 bands (kick 40-150 Hz, mid 150-3000 Hz, hi-hat 5-12 kHz) from the analyser's dB spectrum, spread onto a
+  // 100 Hz onset envelope (independent of the frame rate). Every 0.5 s: autocorrelation per band over the last 8 s, comb over
+  // 1-4 beats for 78-155 BPM, bands weighted by how periodic they are (kick counts double). A tempo locks only after 2.5 s of
+  // agreement and only if the kick or the hi-hat carries it (a voice, crowd or speech alone never locks); it switches only when
+  // a new tempo wins clearly for 3 s and holds through breaks for 16 s. Every 0.25 s the last 4 s of the kick band (else mid,
+  // else hi-hat, which may only nudge) are folded on the beat clock and its phase is pulled toward them, so pulses stay on the
+  // grid when kicks drop out. No clear beat: the clock runs calmly at the fallback tempo. CPU: ~3 ms per second of audio.
+  function makeBeatEngine(sampleRate, fftSize, opt) {
+    opt = opt || {};
+    var TH = opt.thr || .14, PERC = opt.perc == null ? .15 : opt.perc, LOCKS = opt.lockS == null ? 2.5 : opt.lockS, HOLD = opt.hold || 16, FR = 100, NW = 800, LAG = fftSize / sampleRate * .5, G = 1e4;
+    var TMIN = 78, TMAX = 155, TSTEP = .5, NT = Math.round((TMAX - TMIN) / TSTEP) + 1;
+    var LMIN = Math.floor(FR * 60 / TMAX) - 3, LMAX = Math.ceil(4 * FR * 60 / TMIN) + 3;
+    var hz = sampleRate / fftSize, NBIN = fftSize / 2;
+    var BANDS = opt.bands || [[40, 150], [150, 3000], [5000, 12000]], NAMES = ['kick', 'mid', 'hat'], NB = 3, PHMIN = 1.8, PRI = opt.pri || [2, 1, 1], THREE4 = opt.three4 == null ? .6 : opt.three4;
+    var bl = [], bh = [], b, i;
+    for (b = 0; b < NB; b++) { bl[b] = Math.max(1, Math.round(BANDS[b][0] / hz)); bh[b] = Math.max(bl[b], Math.min(NBIN - 1, Math.round(BANDS[b][1] / hz))); }
+    var KMAX = bh[NB - 1];
+    var bmean = new Float32Array(NB), bc = new Float32Array(NB), prev = new Float32Array(NBIN), havePrev = false, tPrev = -1;
+    var ring = [], x = [], ac = [], sc = [], clar = new Float32Array(NB), wts = new Float32Array(NB), fl = new Float32Array(NB);
+    for (b = 0; b < NB; b++) { ring.push(new Float32Array(NW)); x.push(new Float32Array(NW)); ac.push(new Float32Array(LMAX + 2)); sc.push(new Float32Array(NT)); }
+    var tmp = new Float32Array(NW), S = new Float32Array(NT), HB = 48, hist = new Float32Array(HB), hs = new Float32Array(HB);
+    var cell = 0, cellOn = false, cells = 0, lastUpd = -1, nUpd = 0;
+    var e = { fallback: opt.fallback || 124, sens: opt.sens == null ? .5 : opt.sens, lead: opt.lead == null ? .05 : opt.lead,
+      bpm: 0, disp: 0, period: 0, anchor: 0, last: -1, locked: false, conf: 0, raw: 0, band: '', est: 0, perc: 0, r34: 0,
+      pk: 0, phBand: -1, candT: 0, candN: 0, candS: 0, percL: 0, chalT: 0, chalN: 0, goodT: 0, phStr: 0, frames: 0 };
+    e.bpm = e.disp = e.fallback; e.period = 60 / e.bpm;
+
+    function lagAc(a, L) { var j = Math.floor(L), f = L - j; return a[j] * (1 - f) + a[j + 1] * f; }
+    function bandScore(b, P, n) {   // mean normalised autocorrelation at 1..4 beats
+      var s = 0, c = 0; for (var k = 1; k <= 4; k++) { var L = k * P; if (L > LMAX || L > n - 150) break; s += lagAc(ac[b], L); c++; }
+      return c ? s / c : 0;
+    }
+    function frame(t, db) {   // db: Float32Array dB spectrum (AnalyserNode.getFloatFrequencyData), t: seconds
+      e.frames++;
+      var dt = t - tPrev;
+      if (!havePrev || dt > .3 || dt <= 0) {   // first frame, or a stall (hidden tab): no flux across the gap
+        for (i = 1; i <= KMAX; i++) prev[i] = Math.log(1 + G * Math.exp(db[i] * .11512925));
+        havePrev = true; tPrev = t; return;
+      }
+      for (b = 0; b < NB; b++) fl[b] = 0;
+      for (b = 0; b < NB; b++) for (i = bl[b]; i <= bh[b]; i++) {
+        var c = Math.log(1 + G * Math.exp(db[i] * .11512925)), d = c - prev[i]; prev[i] = c; if (d > 0) fl[b] += d;
+      }
+      for (b = 0; b < NB; b++) fl[b] /= (bh[b] - bl[b] + 1);
+      // spread the frame's flux over the 10 ms cells its interval covers (times shifted back by the analysis lag)
+      var t0 = (tPrev - LAG) * FR, t1 = (t - LAG) * FR, c0 = Math.floor(t0), c1 = Math.floor(t1);
+      if (!cellOn) { cell = c0 - 1; cellOn = true; }
+      if (c1 - cell > NW) cell = c1 - NW;   // after a long gap: never loop over more than the ring
+      while (cell < c1) { cell++; var r = ((cell % NW) + NW) % NW; for (b = 0; b < NB; b++) ring[b][r] = 0; if (cells < NW) cells++; }
+      for (var cc = Math.max(c0, cell - NW + 1); cc <= c1; cc++) {
+        var ov = Math.min(t1, cc + 1) - Math.max(t0, cc); if (ov <= 0) continue;
+        var rr = ((cc % NW) + NW) % NW, k2 = ov / (t1 - t0);
+        for (b = 0; b < NB; b++) ring[b][rr] += fl[b] * k2;
+      }
+      tPrev = t;
+      if (t - lastUpd >= .25) { lastUpd = t; update(t); }
+    }
+    function prep(n) {   // chronological copy, minus local mean (+-0.1 s), half-wave, smoothed, z-scored into x[b]
+      var start = cell - n + 1, R = 10;
+      for (b = 0; b < NB; b++) {
+        var xb = x[b], rb = ring[b];
+        for (i = 0; i < n; i++) tmp[i] = rb[(((start + i) % NW) + NW) % NW];
+        var s = 0, lo = 0, hi = -1;
+        for (i = 0; i < n; i++) {
+          while (hi < Math.min(n - 1, i + R)) s += tmp[++hi];
+          while (lo < i - R) s -= tmp[lo++];
+          xb[i] = Math.max(0, tmp[i] - s / (hi - lo + 1));
+        }
+        for (i = 0; i < n; i++) tmp[i] = xb[i];
+        for (i = 0; i < n; i++) xb[i] = .4 * tmp[i] + .24 * ((i > 0 ? tmp[i - 1] : 0) + (i < n - 1 ? tmp[i + 1] : 0)) + .06 * ((i > 1 ? tmp[i - 2] : 0) + (i < n - 2 ? tmp[i + 2] : 0));
+        var m = 0, v = 0; for (i = 0; i < n; i++) m += xb[i]; m /= n;
+        for (i = 0; i < n; i++) v += (xb[i] - m) * (xb[i] - m); v = Math.sqrt(v / n) || 1e-9;
+        for (i = 0; i < n; i++) xb[i] = (xb[i] - m) / v;
+      }
+    }
+    function tempo(n, t) {
+      var b, k, L, j;
+      for (b = 0; b < NB; b++) {
+        var xb = x[b], a = ac[b];
+        for (L = LMIN; L <= LMAX + 1; L++) { if (L >= n - 50) { a[L] = 0; continue; } var s = 0; for (j = 0; j + L < n; j += 2) s += xb[j] * xb[j + L]; a[L] = 2 * s / (n - L); }
+        var mx = -9, mean = 0;
+        for (k = 0; k < NT; k++) { var v = bandScore(b, FR * 60 / (TMIN + k * TSTEP), n); sc[b][k] = v; mean += v; if (v > mx) mx = v; }
+        mean /= NT; clar[b] = mx - mean; bmean[b] = mean;
+      }
+      var wsum = 0; for (b = 0; b < NB; b++) { wts[b] = clar[b] > 0 ? clar[b] * clar[b] * PRI[b] : 0; wsum += wts[b]; }
+      if (wsum <= 0) { e.raw = 0; return null; }
+      var best = 0, bv = -9, sm = 0;
+      for (k = 0; k < NT; k++) {
+        var tt = TMIN + k * TSTEP, s2 = 0; for (b = 0; b < NB; b++) s2 += wts[b] * sc[b][k];
+        var lg = Math.log(tt / 120) / Math.LN2; s2 = s2 / wsum * (1 - .25 * lg * lg);   // mild prior around 120 BPM
+        S[k] = s2; sm += s2; if (s2 > bv) { bv = s2; best = k; }
+      }
+      sm /= NT;
+      var l = best > 0 ? S[best - 1] : bv, r = best < NT - 1 ? S[best + 1] : bv, den = l - 2 * bv + r;
+      var est = TMIN + (best + (den < 0 ? Math.max(-.5, Math.min(.5, .5 * (l - r) / den)) : 0)) * TSTEP;
+      if (THREE4 && est * .75 >= TMIN) {   // 2:3 trap (half-time / drum'n'bass): prefer the duple reading 3/4 of the tempo when it scores almost as well
+        var a34 = combAt(est * .75, n), a1 = combAt(est, n); e.r34 = a1 > 0 ? a34 / a1 : 0; if (a34 >= a1 * THREE4) { est = est * .75; bv = sm + (bv - sm) * (a1 > 0 ? a34 / a1 : 1); }
+      }
+      var bb = 0; for (b = 1; b < NB; b++) if (wts[b] > wts[bb]) bb = b;
+      for (b = 0; b < NB; b++) bc[b] = bandScore(b, FR * 60 / est, n) - bmean[b];
+      e.band = NAMES[bb]; e.perc = Math.max(bc[0], bc[NB - 1]); e.raw = e.perc >= PERC ? bv - sm : Math.min(bv - sm, 0);
+      return est;
+    }
+    function combAt(bpm, n) {   // weighted comb score with the tempo prior, no side effects
+      var wsum = 0, s = 0; for (var b = 0; b < NB; b++) { if (!wts[b]) continue; s += wts[b] * bandScore(b, FR * 60 / bpm, n); wsum += wts[b]; }
+      if (!wsum) return 0; var lg = Math.log(bpm / 120) / Math.LN2; return s / wsum * (1 - .25 * lg * lg);
+    }
+    function scoreAt(bpm, n) {   // combined score at an exact tempo minus the mean over all candidates
+      var wsum = 0, s = 0, sm = 0, k; for (var b = 0; b < NB; b++) { if (!wts[b]) continue; s += wts[b] * bandScore(b, FR * 60 / bpm, n); wsum += wts[b]; }
+      if (!wsum) return 0; var lg = Math.log(bpm / 120) / Math.LN2; s = s / wsum * (1 - .25 * lg * lg);
+      e.percL = Math.max(bandScore(0, FR * 60 / bpm, n) - bmean[0], bandScore(NB - 1, FR * 60 / bpm, n) - bmean[NB - 1]);
+      for (k = 0; k < NT; k++) sm += S[k]; return e.percL >= PERC ? s - sm / NT : 0;
+    }
+    function fold(b, n, P) {   // fold band b's onsets of the last 4 s on the clock; returns peak strength, peak offset in e.pk (beats)
+      var H = Math.min(n, 400), base = (cell - n + 1) / FR, j, xb = x[b];
+      for (j = 0; j < HB; j++) hist[j] = 0;
+      for (i = n - H; i < n; i++) {
+        var v = xb[i]; if (v <= 0) continue;
+        var ph = (base + (i + .5) / FR - e.anchor) / P; ph -= Math.floor(ph);
+        var w = v * Math.exp(-(n - i) / 200), fj = ph * HB, j0 = Math.floor(fj), f = fj - j0;
+        hist[j0 % HB] += w * (1 - f); hist[(j0 + 1) % HB] += w * f;
+      }
+      var mx = -1, bj = 0, sum = 0;
+      for (j = 0; j < HB; j++) { hs[j] = .25 * hist[(j + HB - 1) % HB] + .5 * hist[j] + .25 * hist[(j + 1) % HB]; sum += hs[j]; }
+      for (j = 0; j < HB; j++) if (hs[j] > mx) { mx = hs[j]; bj = j; }
+      var l = hs[(bj + HB - 1) % HB], r = hs[(bj + 1) % HB], den = l - 2 * mx + r;
+      var pk = (bj + (den < 0 ? .5 * (l - r) / den : 0)) / HB; if (pk > .5) pk -= 1;
+      e.pk = pk;
+      return sum > 0 ? mx / (sum / HB) : 0;
+    }
+    var bigT = 0, bigPk = 0;
+    function phase(n, t, snap) {   // phase from the kick if it is clear, else mid (snare/clap), else hi-hat
+      var P = e.period, pick = -1, s = 0;
+      for (var b = 0; b < NB; b++) { s = fold(b, n, P); if (s >= PHMIN) { pick = b; break; } }
+      e.phStr = s; e.phBand = pick;
+      if (pick < 0) return;
+      var pk = e.pk;
+      if (snap) { e.anchor += pk * P; bigT = 0; return; }
+      if (Math.abs(pk) < .2) { e.anchor += pk * P * .3; bigT = 0; return; }
+      if (pick === NB - 1) return;   // hi-hats alone never move the grid far (off-beat hats would flip it)
+      var d = pk - bigPk; d -= Math.round(d);
+      if (bigT && Math.abs(d) < .1) { if (t - bigT > 3) { e.anchor += pk * P; bigT = 0; } } else { bigT = t; bigPk = pk; }
+    }
+    function lockTo(bpm, n, t) {
+      e.locked = true; e.bpm = bpm; e.period = 60 / bpm; e.chalN = 0; e.goodT = t;
+      phase(n, t, true);
+    }
+    function update(t) {
+      var n = Math.min(cells, NW); nUpd++;
+      // keep the anchor near now (the grid pivots around the latest beat when the tempo moves)
+      e.anchor += Math.floor((t - e.anchor) / e.period) * e.period;
+      if (n < 300) return;
+      prep(n);
+      var thrOn = TH * (1.5 - e.sens), thrOff = thrOn * .7;
+      if (nUpd % 2 === 0 || !e.locked) {
+        var est = tempo(n, t); e.est = est || 0;
+        var conf = e.raw;
+        if (!e.locked) {
+          if (est && conf >= thrOn && n >= 400) {
+            if (e.candN && Math.abs(est - e.candT) / e.candT < .02) { e.candN++; e.candT += (est - e.candT) * .5; } else { e.candT = est; e.candN = 1; e.candS = t; }
+            if (e.candN >= 4 && t - e.candS >= LOCKS) lockTo(e.candT, n, t);
+          } else e.candN = 0;
+        } else if (est) {
+          var cl = scoreAt(e.bpm, n);
+          e.conf = Math.max(0, Math.min(1, cl / (thrOn * 2)));
+          if (cl >= thrOff) e.goodT = t;
+          if (Math.abs(est - e.bpm) / e.bpm < .03) {
+            if (conf >= thrOn) { var nb = e.bpm + (est - e.bpm) * .15; e.period = 60 / nb; e.bpm = nb; }
+            e.chalN = Math.max(0, e.chalN - 1);
+          } else if (conf >= thrOn && conf > cl * 1.25 + .01) {
+            if (e.chalN && Math.abs(est - e.chalT) / e.chalT < .025) { e.chalN++; e.chalT += (est - e.chalT) * .5; } else { e.chalT = est; e.chalN = 1; }
+            if (e.chalN >= 6) { lockTo(e.chalT, n, t); }
+          } else e.chalN = Math.max(0, e.chalN - 1);
+          if (t - e.goodT > HOLD) { e.locked = false; e.bpm = e.fallback; e.period = 60 / e.bpm; e.candN = 0; }
+        }
+        if (!e.locked) e.conf = Math.max(0, Math.min(1, conf / (thrOn * 2)));
+      }
+      if (e.locked && t - e.goodT < 3) phase(n, t, false);
+      if (!e.locked) e.disp = Math.round(e.fallback);
+      else if (Math.abs(e.bpm - e.disp) >= .6) e.disp = Math.round(e.bpm);
+    }
+    function tick(t) {   // true = fire a pulse now (one per beat, never closer than 60 % of a beat, early by e.lead)
+      var P = e.period, g0 = e.anchor - e.lead, from = e.last + P * .6;
+      var nxt = g0 + Math.ceil((from - g0) / P) * P;
+      if (t >= nxt) { e.last = t; return true; }
+      return false;
+    }
+    function setFallback(fb) { e.fallback = fb; if (!e.locked) { e.bpm = fb; e.period = 60 / fb; e.disp = Math.round(fb); } }
+    function reset() { e.locked = false; e.candN = 0; e.chalN = 0; cells = 0; cellOn = false; havePrev = false; e.conf = 0; e.raw = 0; e.band = ''; setFallback(e.fallback); }
+    e.bc = bc; e.frame = frame; e.tick = tick; e.setFallback = setFallback; e.reset = reset;
+    return e;
+  }
+  /* BEAT-ENGINE END */
+  var mic = { state: MIC ? 'idle' : 'off', ctx: null, an: null, buf: null, eng: null, sw: 0 };
+  function startMic() {
+    if (mic.ctx && mic.ctx.state === 'suspended') { try { mic.ctx.resume(); } catch (e) {} }
+    if (mic.state !== 'idle') return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { mic.state = 'none'; return; }
+    mic.state = 'asking';
+    var ac; try { ac = new AC(); ac.resume(); } catch (e) { mic.state = 'none'; return; }
+    mic.ctx = ac;
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false })
+      .then(function (st) {
+        var an = ac.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0;
+        ac.createMediaStreamSource(st).connect(an);   // never to the speakers
+        mic.an = an; mic.buf = new Float32Array(an.frequencyBinCount);
+        mic.eng = makeBeatEngine(ac.sampleRate, an.fftSize, { fallback: 124, sens: .5 }); mic.state = 'on';
+      })
+      .catch(function () { mic.state = 'denied'; try { ac.close(); } catch (e) {} mic.ctx = null; });
+  }
+  function micSwell(t) {   // 0..1, eased; 0 unless the engine has a confident lock
+    if (mic.state !== 'on' || !mic.eng) { mic.sw *= .95; return mic.sw; }
+    if (!mic.ctx || mic.ctx.state === 'running') { mic.an.getFloatFrequencyData(mic.buf); mic.eng.frame(t, mic.buf); }
+    mic.eng.tick(t);
+    var e = mic.eng, target = 0;
+    if (e.locked && e.conf > .35 && e.last > 0) { var ph = Math.max(0, Math.min(1, (t - e.last) / e.period)); target = Math.exp(-ph * 3); }
+    mic.sw += (target - mic.sw) * .18;   // soft attack and release: a swell, never a hit
+    return mic.sw;
+  }
+  if (MIC) {
+    startMic();
+    try { if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'microphone' }).then(function (s) { if (s.state === 'granted') startMic(); }).catch(function () {}); } catch (e) {}
+  }
+
+  // ---------- main loop ----------
+  var t0 = performance.now() / 1000, frames = 0, fpsT = t0, fps = 0, lowN = 0;
+  function frame() {
+    requestAnimationFrame(frame);
+    var now = performance.now() / 1000, t = now - t0, sw = MIC ? micSwell(now) : 0;
+    if (FORCE < 0) {
+      if (nxt < 0 && t - tSw > dur) { nxt = pickNext(); tSw = t; }
+      if (nxt >= 0 && t - tSw > FADE) { cur = nxt; nxt = -1; tSw = t - FADE; dur = DUR || 45 + Math.random() * 15; tSw = t; }
+    }
+    var fa = nxt >= 0 ? Math.min(1, (t - tSw) / FADE) : 0; fa = fa * fa * (3 - 2 * fa);
+    // composite: current scene (and the next one during a crossfade)
+    cx.setTransform(1, 0, 0, 1, 0, 0); cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+    cx.fillStyle = '#000'; cx.fillRect(0, 0, S, S);
+    drawScene(cur, t, sw, 1 - fa);
+    if (nxt >= 0) drawScene(nxt, t, sw, fa);
+    // warp: horizontal slices shifted by a slow sine; the amount itself drifts in and out
+    var amp = S * .018 * Math.max(0, Math.sin(t * .045)) * (.6 + .4 * Math.sin(t * .13));
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, S, S);
+    if (amp < .5) ctx.drawImage(comp, 0, 0);
+    else {
+      var NS = LITE ? 18 : 30, h = S / NS;
+      for (var i = 0; i < NS; i++) {
+        var y = i * h, dx = amp * Math.sin(i * .55 + t * .6) + amp * .5 * Math.sin(i * .21 - t * .37);
+        ctx.drawImage(comp, 0, y, S, h + 1, dx, y, S, h + 1);
+      }
+    }
+    // colour drift over everything (gentle), a soft brightness swell with the mic, then the feathered circle
+    ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = .22; ctx.fillStyle = rgba(palAt(t * .015), 1); ctx.fillRect(0, 0, S, S);
+    if (sw > .01) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .1 * sw; ctx.drawImage(ctx.canvas, 0, 0); }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'destination-in'; ctx.drawImage(mask, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    // fps + auto-lite: if a slow machine stays under 36 fps, lower the work resolution once or twice
+    frames++;
+    if (now - fpsT >= 2) {
+      fps = frames / (now - fpsT); frames = 0; fpsT = now;
+      if (fps < 36 && t > 4 && S > 360) { if (++lowN >= 2) { CAP = Math.round(S * .8); resize(); lowN = 0; } } else lowN = 0;
+      if (DEBUG) dbg.textContent = fps.toFixed(0) + ' fps · ' + S + ' px · ' + SCENES[cur].name + (nxt >= 0 ? ' → ' + SCENES[nxt].name : '') + (MIC ? ' · mic ' + mic.state + (mic.eng ? (mic.eng.locked ? ' locked ' + mic.eng.disp : ' listening') : '') : '');
+    }
+  }
+  function drawScene(i, t, sw, a) {
+    if (a <= 0.001) return;
+    sx.setTransform(1, 0, 0, 1, 0, 0); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
+    sx.fillStyle = '#000'; sx.fillRect(0, 0, S, S);
+    try { SCENES[i].draw(sx, t, sw); } catch (e) {}
+    sx.setTransform(1, 0, 0, 1, 0, 0); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
+    cx.globalAlpha = a; cx.globalCompositeOperation = 'lighter'; cx.drawImage(scr, 0, 0);
+    cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+  }
+  window.__proj = function () { return { fps: Math.round(fps), S: S, D: D, scene: SCENES[cur].name, next: nxt >= 0 ? SCENES[nxt].name : '', mic: mic.state }; };
+
+  // click once = fullscreen (and wakes the audio if ?mic=1); Wake Lock keeps the screen on where supported
+  document.addEventListener('click', function () {
+    if (MIC) startMic();
+    var el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) { try { el.requestFullscreen().catch(function () {}); } catch (e) {} }
+    wake();
+  });
+  var lock = null;
+  function wake() { try { if (navigator.wakeLock && !lock) navigator.wakeLock.request('screen').then(function (l) { lock = l; l.addEventListener('release', function () { lock = null; }); }).catch(function () {}); } catch (e) {} }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
+  window.addEventListener('resize', resize);
+  resize(); wake(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
